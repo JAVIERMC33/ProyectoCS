@@ -19,12 +19,7 @@ public class TareaController {
         this.scanner = new Scanner(System.in);
     }
 
-    public void crearTarea(String titulo, String descripcion, LocalDate fechaVencimiento, Prioridad prioridad) {
-        Tarea nuevaTarea = new Tarea(null, titulo, descripcion, fechaVencimiento, prioridad, Estado.PENDIENTE);
-        tareaService.crearTarea(nuevaTarea);
-        System.out.println("Tarea creada exitosamente!");
-    }
-/* 
+    
     public void crearTarea() {
         System.out.println("\n--- Crear Nueva Tarea ---");
         
@@ -46,7 +41,7 @@ public class TareaController {
         tareaService.crearTarea(nuevaTarea);
         System.out.println("Tarea creada exitosamente!");
     }
-*/
+
     public void listarTareas() {
         System.out.println("\n--- Lista de Tareas ---");
         System.out.println("1. Ordenar por fecha de vencimiento");
@@ -136,4 +131,77 @@ public class TareaController {
             System.out.println("Eliminación cancelada");
         }
     }
+
+    public void menuBusquedaFiltrado() {
+        System.out.println("\n--- Buscar/Filtrar Tareas ---");
+        System.out.println("1. Filtrar por estado");
+        System.out.println("2. Filtrar por prioridad");
+        System.out.println("3. Filtrar por fecha de vencimiento");
+        System.out.println("4. Buscar por palabra clave");
+        System.out.print("Seleccione una opción: ");
+        int opcion = scanner.nextInt();
+        scanner.nextLine(); // Consumir el salto de línea
+        
+        List<Tarea> resultados = null;
+        
+        switch (opcion) {
+            case 1:
+                System.out.print("Ingrese estado (PENDIENTE, EN_PROGRESO, COMPLETADA): ");
+                Estado estado = Estado.valueOf(scanner.nextLine().toUpperCase());
+                resultados = tareaService.filtrarPorEstado(estado);
+                break;
+            case 2:
+                System.out.print("Ingrese prioridad (ALTA, MEDIA, BAJA): ");
+                Prioridad prioridad = Prioridad.valueOf(scanner.nextLine().toUpperCase());
+                resultados = tareaService.filtrarPorPrioridad(prioridad);
+                break;
+            case 3:
+                System.out.print("Ingrese fecha (YYYY-MM-DD): ");
+                LocalDate fecha = LocalDate.parse(scanner.nextLine());
+                resultados = tareaService.filtrarPorFechaVencimiento(fecha);
+                break;
+            case 4:
+                System.out.print("Ingrese palabra clave: ");
+                String palabra = scanner.nextLine();
+                resultados = tareaService.buscarPorPalabraClave(palabra);
+                break;
+            default:
+                System.out.println("Opción no válida");
+                return;
+        }
+        
+        if (resultados != null && !resultados.isEmpty()) {
+            imprimirTareasEnTabla(resultados);
+        } else {
+            System.out.println("No se encontraron tareas con los criterios especificados");
+        }
+    }
+
+    // Método para crear tarea con parámetros (para los datos demo)
+public void crearTarea(String titulo, String descripcion, LocalDate fechaVencimiento, 
+Prioridad prioridad, Estado estado) {
+Tarea nuevaTarea = new Tarea(null, titulo, descripcion, fechaVencimiento, prioridad, estado);
+tareaService.crearTarea(nuevaTarea);
+}
+
+// Métodos para búsqueda/filtrado
+public void filtrarPorEstado(Estado estado) {
+List<Tarea> tareasFiltradas = tareaService.filtrarPorEstado(estado);
+imprimirTareasEnTabla(tareasFiltradas);
+}
+
+public void filtrarPorPrioridad(Prioridad prioridad) {
+List<Tarea> tareasFiltradas = tareaService.filtrarPorPrioridad(prioridad);
+imprimirTareasEnTabla(tareasFiltradas);
+}
+
+public void filtrarPorFecha(LocalDate fecha) {
+List<Tarea> tareasFiltradas = tareaService.filtrarPorFechaVencimiento(fecha);
+imprimirTareasEnTabla(tareasFiltradas);
+}
+
+public void buscarPorPalabraClave(String palabraClave) {
+List<Tarea> resultados = tareaService.buscarPorPalabraClave(palabraClave);
+imprimirTareasEnTabla(resultados);
+}
 }
