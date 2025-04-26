@@ -8,6 +8,8 @@ public interface TareaRepositorio {
     Tarea guardar(Tarea tarea);
     Optional<Tarea> buscarPorId(Long id);
     List<Tarea> obtenerTodas();
-    void eliminar(Long id);
-    void actualizar(Tarea tarea);
+    boolean eliminar(Long id);
+    Tarea actualizar(Tarea tarea);
+    boolean existeConId(Long id);
+    List<Tarea> buscarPorPalabraClave(String palabraClave);
 }

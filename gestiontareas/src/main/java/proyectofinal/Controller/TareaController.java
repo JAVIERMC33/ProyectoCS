@@ -176,32 +176,4 @@ public class TareaController {
             System.out.println("No se encontraron tareas con los criterios especificados");
         }
     }
-
-    // Método para crear tarea con parámetros (para los datos demo)
-public void crearTarea(String titulo, String descripcion, LocalDate fechaVencimiento, 
-Prioridad prioridad, Estado estado) {
-Tarea nuevaTarea = new Tarea(null, titulo, descripcion, fechaVencimiento, prioridad, estado);
-tareaService.crearTarea(nuevaTarea);
-}
-
-// Métodos para búsqueda/filtrado
-public void filtrarPorEstado(Estado estado) {
-List<Tarea> tareasFiltradas = tareaService.filtrarPorEstado(estado);
-imprimirTareasEnTabla(tareasFiltradas);
-}
-
-public void filtrarPorPrioridad(Prioridad prioridad) {
-List<Tarea> tareasFiltradas = tareaService.filtrarPorPrioridad(prioridad);
-imprimirTareasEnTabla(tareasFiltradas);
-}
-
-public void filtrarPorFecha(LocalDate fecha) {
-List<Tarea> tareasFiltradas = tareaService.filtrarPorFechaVencimiento(fecha);
-imprimirTareasEnTabla(tareasFiltradas);
-}
-
-public void buscarPorPalabraClave(String palabraClave) {
-List<Tarea> resultados = tareaService.buscarPorPalabraClave(palabraClave);
-imprimirTareasEnTabla(resultados);
-}
 }

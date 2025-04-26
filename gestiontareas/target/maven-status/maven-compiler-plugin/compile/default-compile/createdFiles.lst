@@ -1,0 +1,14 @@
+proyectofinal\Controller\TareaController.class
+proyectofinal\Repositorio\JsonTareaRepositorio.class
+proyectofinal\Model\Estado.class
+proyectofinal\View\MainApp.class
+proyectofinal\Model\Prioridad.class
+proyectofinal\Repositorio\TareaRepositorio.class
+proyectofinal\Repositorio\TareaRepositorioImpl.class
+proyectofinal\View\MainController.class
+proyectofinal\Servicio\TareaService.class
+proyectofinal\View\MainController$1.class
+proyectofinal\MainTercerCommit.class
+proyectofinal\Repositorio\JsonTareaRepositorio$1.class
+proyectofinal\Model\Tarea.class
+proyectofinal\Servicio\TareaServicioImpl.class

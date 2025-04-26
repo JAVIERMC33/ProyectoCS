@@ -4,7 +4,6 @@ import proyectofinal.Model.Estado;
 import proyectofinal.Model.Prioridad;
 import proyectofinal.Model.Tarea;
 import proyectofinal.Repositorio.TareaRepositorio;
-
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -19,7 +18,7 @@ public class TareaServicioImpl implements TareaService {
     }
 
     @Override
-    public Tarea crearTarea(Tarea tarea) {
+    public Tarea crearTarea(Tarea tarea) throws IllegalArgumentException {
         return tareaRepositorio.guardar(tarea);
     }
 
@@ -34,36 +33,35 @@ public class TareaServicioImpl implements TareaService {
     }
 
     @Override
-    public boolean actualizarTarea(Tarea tarea) {
-        if (tareaRepositorio.buscarPorId(tarea.getId()).isPresent()) {
+    public boolean actualizarTarea(Tarea tarea) throws IllegalArgumentException {
+        try {
             tareaRepositorio.actualizar(tarea);
             return true;
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error al actualizar tarea: " + e.getMessage());
+            throw e;
         }
-        return false;
     }
 
     @Override
     public boolean eliminarTarea(Long id) {
-        if (tareaRepositorio.buscarPorId(id).isPresent()) {
-            tareaRepositorio.eliminar(id);
-            return true;
-        }
-        return false;
+        return tareaRepositorio.eliminar(id);
     }
 
     @Override
     public List<Tarea> ordenarTareasPorFechaVencimiento() {
-        List<Tarea> tareas = tareaRepositorio.obtenerTodas();
-        tareas.sort(Comparator.comparing(Tarea::getFechaVencimiento));
-        return tareas;
+        return tareaRepositorio.obtenerTodas().stream()
+                .sorted(Comparator.comparing(Tarea::getFechaVencimiento))
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<Tarea> ordenarTareasPorPrioridad() {
-        List<Tarea> tareas = tareaRepositorio.obtenerTodas();
-        tareas.sort(Comparator.comparing(Tarea::getPrioridad));
-        return tareas;
+        return tareaRepositorio.obtenerTodas().stream()
+                .sorted(Comparator.comparing(Tarea::getPrioridad))
+                .collect(Collectors.toList());
     }
+
     @Override
     public List<Tarea> filtrarPorEstado(Estado estado) {
         return tareaRepositorio.obtenerTodas().stream()
@@ -90,7 +88,7 @@ public class TareaServicioImpl implements TareaService {
         String palabra = palabraClave.toLowerCase();
         return tareaRepositorio.obtenerTodas().stream()
                 .filter(t -> t.getTitulo().toLowerCase().contains(palabra) || 
-                            (t.getDescripcion() != null && t.getDescripcion().toLowerCase().contains(palabra)))
+                           (t.getDescripcion() != null && t.getDescripcion().toLowerCase().contains(palabra)))
                 .collect(Collectors.toList());
     }
 }
