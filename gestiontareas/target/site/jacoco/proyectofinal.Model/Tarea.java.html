@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Tarea.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ProyectoFinalCS</a> &gt; <a href="index.source.html" class="el_package">proyectofinal.Model</a> &gt; <span class="el_source">Tarea.java</span></div><h1>Tarea.java</h1><pre class="source lang-java linenums">package proyectofinal.Model;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalDate;
+import java.util.Objects;
+
+/**
+ * Modelo que representa una tarea en el sistema.
+ * Incluye validaciones básicas y soporte para serialización JSON.
+ */
+public class Tarea {
+    private Long id;
+    private String titulo;
+    private String descripcion;
+    private LocalDate fechaVencimiento;
+    private Prioridad prioridad;
+    private Estado estado;
+
+    /**
+     * Constructor principal para creación y deserialización JSON
+     */
+    @JsonCreator
+    public Tarea(
+            @JsonProperty(&quot;id&quot;) Long id,
+            @JsonProperty(&quot;titulo&quot;) String titulo,
+            @JsonProperty(&quot;descripcion&quot;) String descripcion,
+            @JsonProperty(&quot;fechaVencimiento&quot;) LocalDate fechaVencimiento,
+            @JsonProperty(&quot;prioridad&quot;) Prioridad prioridad,
+<span class="fc" id="L30">            @JsonProperty(&quot;estado&quot;) Estado estado) {</span>
+<span class="fc" id="L31">        this.id = id;</span>
+<span class="fc" id="L32">        this.setTitulo(titulo);</span>
+<span class="fc" id="L33">        this.setDescripcion(descripcion);</span>
+<span class="fc" id="L34">        this.setFechaVencimiento(fechaVencimiento);</span>
+<span class="fc" id="L35">        this.setPrioridad(prioridad);</span>
+<span class="fc" id="L36">        this.setEstado(estado);</span>
+<span class="fc" id="L37">    }</span>
+
+    // Getters
+<span class="fc" id="L40">    public Long getId() { return id; }</span>
+<span class="fc" id="L41">    public String getTitulo() { return titulo; }</span>
+<span class="fc" id="L42">    public String getDescripcion() { return descripcion; }</span>
+<span class="fc" id="L43">    public LocalDate getFechaVencimiento() { return fechaVencimiento; }</span>
+<span class="fc" id="L44">    public Prioridad getPrioridad() { return prioridad; }</span>
+<span class="fc" id="L45">    public Estado getEstado() { return estado; }</span>
+
+    // Setters con validación
+    public void setId(Long id) { 
+<span class="fc" id="L49">        this.id = id; </span>
+<span class="fc" id="L50">    }</span>
+    
+    public void setTitulo(String titulo) {
+<span class="pc bpc" id="L53" title="1 of 4 branches missed.">        if (titulo == null || titulo.trim().isEmpty()) {</span>
+<span class="fc" id="L54">            throw new IllegalArgumentException(&quot;El título no puede estar vacío&quot;);</span>
+        }
+<span class="fc" id="L56">        this.titulo = titulo.trim();</span>
+<span class="fc" id="L57">    }</span>
+    
+    public void setDescripcion(String descripcion) {
+<span class="pc bpc" id="L60" title="2 of 4 branches missed.">        if (descripcion == null || descripcion.trim().isEmpty()) {</span>
+<span class="nc" id="L61">            throw new IllegalArgumentException(&quot;La descripción no puede estar vacía&quot;);</span>
+        }
+<span class="fc" id="L63">        this.descripcion = descripcion.trim();</span>
+<span class="fc" id="L64">    }</span>
+
+    public void setFechaVencimiento(LocalDate fechaVencimiento) {
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (fechaVencimiento == null) {</span>
+<span class="nc" id="L68">            throw new IllegalArgumentException(&quot;La fecha de vencimiento no puede ser nula&quot;);</span>
+        }
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (fechaVencimiento.isBefore(LocalDate.now())) {</span>
+<span class="fc" id="L71">            throw new IllegalArgumentException(&quot;La fecha de vencimiento no puede ser anterior a la fecha actual&quot;);</span>
+        }
+<span class="fc" id="L73">        this.fechaVencimiento = fechaVencimiento;</span>
+<span class="fc" id="L74">    }</span>
+    
+    public void setPrioridad(Prioridad prioridad) {
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (prioridad == null) {</span>
+<span class="fc" id="L78">            throw new IllegalArgumentException(&quot;La prioridad no puede ser nula&quot;);</span>
+        }
+<span class="fc" id="L80">        this.prioridad = prioridad;</span>
+<span class="fc" id="L81">    }</span>
+    
+    public void setEstado(Estado estado) {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (estado == null) {</span>
+<span class="nc" id="L85">            throw new IllegalArgumentException(&quot;El estado no puede ser nulo&quot;);</span>
+        }
+<span class="fc" id="L87">        this.estado = estado;</span>
+<span class="fc" id="L88">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L92">        return &quot;Tarea{&quot; +</span>
+                &quot;id=&quot; + id +
+                &quot;, titulo='&quot; + titulo + '\'' +
+                &quot;, descripcion='&quot; + descripcion + '\'' +
+                &quot;, fechaVencimiento=&quot; + fechaVencimiento +
+                &quot;, prioridad=&quot; + prioridad +
+                &quot;, estado=&quot; + estado +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L105" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L106">        Tarea tarea = (Tarea) o;</span>
+<span class="fc" id="L107">        return Objects.equals(id, tarea.id);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L112">        return Objects.hash(id);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

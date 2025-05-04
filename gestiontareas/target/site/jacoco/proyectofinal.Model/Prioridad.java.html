@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Prioridad.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ProyectoFinalCS</a> &gt; <a href="index.source.html" class="el_package">proyectofinal.Model</a> &gt; <span class="el_source">Prioridad.java</span></div><h1>Prioridad.java</h1><pre class="source lang-java linenums">package proyectofinal.Model;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * Representa los niveles de prioridad de una tarea.
+ * Soporta serialización/deserialización JSON en formato objeto.
+ */
+<span class="fc" id="L11">@JsonFormat(shape = JsonFormat.Shape.OBJECT)</span>
+public enum Prioridad {
+<span class="fc" id="L13">    ALTA(&quot;Alta&quot;),</span>
+<span class="fc" id="L14">    MEDIA(&quot;Media&quot;),</span>
+<span class="fc" id="L15">    BAJA(&quot;Baja&quot;);</span>
+
+    private final String descripcion;
+
+<span class="fc" id="L19">    Prioridad(String descripcion) {</span>
+<span class="fc" id="L20">        this.descripcion = descripcion;</span>
+<span class="fc" id="L21">    }</span>
+
+    /**
+     * Obtiene la descripción legible de la prioridad
+     * @return Descripción de la prioridad
+     */
+    public String getDescripcion() {
+<span class="fc" id="L28">        return descripcion;</span>
+    }
+
+    /**
+     * Método factory para deserialización desde JSON
+     * @param descripcion Descripción de la prioridad
+     * @return Instancia de Prioridad
+     * @throws IllegalArgumentException Si la descripción no coincide con ninguna prioridad
+     */
+    @JsonCreator
+    public static Prioridad fromObject(@JsonProperty(&quot;descripcion&quot;) String descripcion) {
+<span class="fc bfc" id="L39" title="All 4 branches covered.">        if (descripcion == null || descripcion.trim().isEmpty()) {</span>
+<span class="fc" id="L40">            throw new IllegalArgumentException(&quot;La descripción de prioridad no puede estar vacía&quot;);</span>
+        }
+        
+<span class="fc" id="L43">        String descripcionNormalizada = descripcion.trim().toLowerCase();</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (Prioridad p : Prioridad.values()) {</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            if (p.descripcion.toLowerCase().equals(descripcionNormalizada)) {</span>
+<span class="fc" id="L46">                return p;</span>
+            }
+        }
+<span class="fc" id="L49">        throw new IllegalArgumentException(&quot;Prioridad no válida: &quot; + descripcion + </span>
+               &quot;. Valores aceptados: Alta, Media, Baja&quot;);
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L55">        return descripcion;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

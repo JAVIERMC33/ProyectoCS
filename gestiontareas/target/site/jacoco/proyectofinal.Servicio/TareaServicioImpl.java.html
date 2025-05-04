@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TareaServicioImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ProyectoFinalCS</a> &gt; <a href="index.source.html" class="el_package">proyectofinal.Servicio</a> &gt; <span class="el_source">TareaServicioImpl.java</span></div><h1>TareaServicioImpl.java</h1><pre class="source lang-java linenums">package proyectofinal.Servicio;
+
+import proyectofinal.Model.Estado;
+import proyectofinal.Model.Prioridad;
+import proyectofinal.Model.Tarea;
+import proyectofinal.Repositorio.TareaRepositorio;
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/**
+ * Implementación del servicio de gestión de tareas.
+ */
+public class TareaServicioImpl implements TareaService {
+    private final TareaRepositorio tareaRepositorio;
+
+    /**
+     * Constructor que recibe el repositorio a utilizar.
+     * @param tareaRepositorio Repositorio de tareas
+     */
+<span class="fc" id="L23">    public TareaServicioImpl(TareaRepositorio tareaRepositorio) {</span>
+<span class="fc" id="L24">        this.tareaRepositorio = tareaRepositorio;</span>
+<span class="fc" id="L25">    }</span>
+
+    @Override
+    public Tarea crearTarea(Tarea tarea) throws IllegalArgumentException {
+<span class="fc" id="L29">        validarTarea(tarea);</span>
+<span class="fc" id="L30">        return tareaRepositorio.guardar(tarea);</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; obtenerTodasLasTareas() {
+<span class="nc" id="L35">        return tareaRepositorio.obtenerTodas();</span>
+    }
+
+    @Override
+    public Optional&lt;Tarea&gt; obtenerTareaPorId(Long id) {
+<span class="nc" id="L40">        return tareaRepositorio.buscarPorId(id);</span>
+    }
+
+    @Override
+    public boolean actualizarTarea(Tarea tarea) throws IllegalArgumentException {
+<span class="fc" id="L45">        validarTarea(tarea);</span>
+        
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        if (tarea.getId() == null) {</span>
+<span class="nc" id="L48">            throw new IllegalArgumentException(&quot;La tarea no tiene un ID válido&quot;);</span>
+        }
+        
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        if (!tareaRepositorio.existeConId(tarea.getId())) {  </span>
+<span class="fc" id="L52">            throw new IllegalArgumentException(&quot;La tarea con ID &quot; + tarea.getId() + &quot; no existe&quot;);</span>
+        }
+        
+        try {
+<span class="nc" id="L56">            Tarea tareaActualizada = tareaRepositorio.actualizar(tarea);</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">            return tareaActualizada != null;</span>
+<span class="nc" id="L58">        } catch (Exception e) {</span>
+<span class="nc" id="L59">            System.err.println(&quot;Error al actualizar tarea: &quot; + e.getMessage());</span>
+<span class="nc" id="L60">            return false;</span>
+        }
+    }
+
+    @Override
+    public boolean eliminarTarea(Long id) {
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L67">            return false;</span>
+        }
+<span class="nc" id="L69">        return tareaRepositorio.eliminar(id);</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; ordenarTareasPorFechaVencimiento() {
+<span class="nc" id="L74">        return tareaRepositorio.obtenerTodas().stream()</span>
+<span class="nc" id="L75">                .sorted(Comparator.comparing(Tarea::getFechaVencimiento))</span>
+<span class="nc" id="L76">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; ordenarTareasPorPrioridad() {
+<span class="nc" id="L81">        return tareaRepositorio.obtenerTodas().stream()</span>
+<span class="nc" id="L82">                .sorted(Comparator.comparing(Tarea::getPrioridad))</span>
+<span class="nc" id="L83">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; filtrarPorEstado(Estado estado) {
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        if (estado == null) {</span>
+<span class="nc" id="L89">            throw new IllegalArgumentException(&quot;El estado no puede ser nulo&quot;);</span>
+        }
+<span class="fc" id="L91">        return tareaRepositorio.obtenerTodas().stream()</span>
+<span class="fc" id="L92">                .filter(tarea -&gt; estado.equals(tarea.getEstado()))</span>
+<span class="fc" id="L93">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; filtrarPorPrioridad(Prioridad prioridad) {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (prioridad == null) {</span>
+<span class="nc" id="L99">            throw new IllegalArgumentException(&quot;La prioridad no puede ser nula&quot;);</span>
+        }
+<span class="nc" id="L101">        return tareaRepositorio.obtenerTodas().stream()</span>
+<span class="nc" id="L102">                .filter(tarea -&gt; prioridad.equals(tarea.getPrioridad()))</span>
+<span class="nc" id="L103">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; filtrarPorFechaVencimiento(LocalDate fecha) {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (fecha == null) {</span>
+<span class="nc" id="L109">            throw new IllegalArgumentException(&quot;La fecha no puede ser nula&quot;);</span>
+        }
+<span class="nc" id="L111">        return tareaRepositorio.obtenerTodas().stream()</span>
+<span class="nc" id="L112">                .filter(tarea -&gt; fecha.equals(tarea.getFechaVencimiento()))</span>
+<span class="nc" id="L113">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; buscarPorPalabraClave(String palabraClave) {
+<span class="nc bnc" id="L118" title="All 4 branches missed.">        if (palabraClave == null || palabraClave.trim().isEmpty()) {</span>
+<span class="nc" id="L119">            return List.of();</span>
+        }
+        
+<span class="nc" id="L122">        String palabra = palabraClave.toLowerCase().trim();</span>
+<span class="nc" id="L123">        return tareaRepositorio.buscarPorPalabraClave(palabra);</span>
+    }
+
+    private void validarTarea(Tarea tarea) {
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        if (tarea == null) {</span>
+<span class="nc" id="L128">            throw new IllegalArgumentException(&quot;La tarea no puede ser nula&quot;);</span>
+        }
+<span class="pc bpc" id="L130" title="2 of 4 branches missed.">        if (tarea.getTitulo() == null || tarea.getTitulo().trim().isEmpty()) {</span>
+<span class="nc" id="L131">            throw new IllegalArgumentException(&quot;El título de la tarea no puede estar vacío&quot;);</span>
+        }
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (tarea.getFechaVencimiento() == null) {</span>
+<span class="nc" id="L134">            throw new IllegalArgumentException(&quot;La fecha de vencimiento no puede ser nula&quot;);</span>
+        }
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (tarea.getFechaVencimiento().isBefore(LocalDate.now())) {  </span>
+<span class="nc" id="L137">            throw new IllegalArgumentException(&quot;La fecha de vencimiento no puede ser pasada&quot;);</span>
+        }
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (tarea.getPrioridad() == null) {</span>
+<span class="nc" id="L140">            throw new IllegalArgumentException(&quot;La prioridad no puede ser nula&quot;);</span>
+        }
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        if (tarea.getEstado() == null) {</span>
+<span class="nc" id="L143">            throw new IllegalArgumentException(&quot;El estado no puede ser nulo&quot;);</span>
+        }
+<span class="fc" id="L145">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

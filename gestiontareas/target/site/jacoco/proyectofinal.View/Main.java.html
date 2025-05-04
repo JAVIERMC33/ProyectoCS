@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Main.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ProyectoFinalCS</a> &gt; <a href="index.source.html" class="el_package">proyectofinal.View</a> &gt; <span class="el_source">Main.java</span></div><h1>Main.java</h1><pre class="source lang-java linenums">package proyectofinal.View;
+
+import proyectofinal.Repositorio.JsonTareaRepositorio;
+import proyectofinal.Repositorio.PersistenciaException;
+import proyectofinal.Repositorio.TareaRepositorio;
+import proyectofinal.Servicio.TareaService;
+import proyectofinal.Servicio.TareaServicioImpl;
+import javax.swing.*;
+
+/**
+ * Clase principal que inicia la aplicación de gestión de tareas.
+ */
+<span class="nc" id="L13">public class Main {</span>
+    
+    private static final String APP_NAME = &quot;Gestor de Tareas&quot;;
+    private static final String DATA_ERROR_MSG = 
+        &quot;Error al acceder a los datos de tareas.\n&quot; +
+        &quot;Verifique los permisos o espacio en disco.\n\n&quot; +
+        &quot;Detalles técnicos:\n&quot;;
+
+    public static void main(String[] args) {
+        // Configurar el Look and Feel de sistema
+<span class="nc" id="L23">        setSystemLookAndFeel();</span>
+        
+        // Configurar manejo de excepciones no capturadas
+<span class="nc" id="L26">        Thread.setDefaultUncaughtExceptionHandler(Main::handleUncaughtException);</span>
+        
+        // Iniciar aplicación en el hilo de eventos de Swing
+<span class="nc" id="L29">        SwingUtilities.invokeLater(Main::startApplication);</span>
+<span class="nc" id="L30">    }</span>
+    
+    private static void setSystemLookAndFeel() {
+        try {
+<span class="nc" id="L34">            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());</span>
+<span class="nc" id="L35">        } catch (Exception e) {</span>
+<span class="nc" id="L36">            System.err.println(&quot;No se pudo configurar el Look and Feel del sistema&quot;);</span>
+<span class="nc" id="L37">        }</span>
+<span class="nc" id="L38">    }</span>
+    
+    private static void startApplication() {
+        try {
+<span class="nc" id="L42">            initializeApplication();</span>
+<span class="nc" id="L43">        } catch (PersistenciaException e) {</span>
+<span class="nc" id="L44">            showDataError(e);</span>
+<span class="nc" id="L45">        } catch (Exception e) {</span>
+<span class="nc" id="L46">            showFatalError(&quot;Error inesperado al iniciar la aplicación&quot;, e);</span>
+<span class="nc" id="L47">        }</span>
+<span class="nc" id="L48">    }</span>
+    
+    private static void initializeApplication() {
+<span class="nc" id="L51">        TareaRepositorio repositorio = initializeRepository();</span>
+<span class="nc" id="L52">        TareaService servicio = initializeService(repositorio);</span>
+<span class="nc" id="L53">        showMainWindow(servicio);</span>
+<span class="nc" id="L54">        System.out.println(&quot;Aplicación iniciada correctamente&quot;);</span>
+<span class="nc" id="L55">    }</span>
+    
+    private static TareaRepositorio initializeRepository() {
+        // Simplemente creamos el repositorio sin llamar a verificarEstadoRepositorio()
+<span class="nc" id="L59">        return new JsonTareaRepositorio();</span>
+    }
+    
+    private static TareaService initializeService(TareaRepositorio repositorio) {
+<span class="nc" id="L63">        return new TareaServicioImpl(repositorio);</span>
+    }
+    
+    private static void showMainWindow(TareaService servicio) {
+<span class="nc" id="L67">        MainFrame mainFrame = new MainFrame(servicio);</span>
+<span class="nc" id="L68">        mainFrame.setTitle(APP_NAME);</span>
+<span class="nc" id="L69">        mainFrame.setVisible(true);</span>
+<span class="nc" id="L70">    }</span>
+    
+    private static void handleUncaughtException(Thread t, Throwable e) {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (e instanceof PersistenciaException) {</span>
+<span class="nc" id="L74">            showDataError((PersistenciaException) e);</span>
+        } else {
+<span class="nc" id="L76">            showFatalError(&quot;Error inesperado&quot;, e);</span>
+        }
+<span class="nc" id="L78">    }</span>
+    
+    private static void showDataError(PersistenciaException e) {
+<span class="nc" id="L81">        String fullMessage = DATA_ERROR_MSG + e.getMessage();</span>
+        
+<span class="nc" id="L83">        JOptionPane.showMessageDialog(</span>
+            null, 
+            fullMessage,
+            &quot;Error de Datos - &quot; + APP_NAME, 
+            JOptionPane.ERROR_MESSAGE
+        );
+        
+<span class="nc" id="L90">        System.err.println(&quot;Error de persistencia: &quot; + e.getMessage());</span>
+<span class="nc" id="L91">        e.printStackTrace();</span>
+<span class="nc" id="L92">        System.exit(1);</span>
+<span class="nc" id="L93">    }</span>
+    
+    private static void showFatalError(String title, Throwable e) {
+<span class="nc" id="L96">        String message = String.format(&quot;%s:\n%s\n\nVer consola para detalles técnicos.&quot;, </span>
+<span class="nc" id="L97">                                     title, e.getMessage());</span>
+        
+<span class="nc" id="L99">        JOptionPane.showMessageDialog(</span>
+            null, 
+            message, 
+            &quot;Error Crítico - &quot; + APP_NAME, 
+            JOptionPane.ERROR_MESSAGE
+        );
+        
+<span class="nc" id="L106">        System.err.println(title + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L107">        e.printStackTrace();</span>
+<span class="nc" id="L108">        System.exit(1);</span>
+<span class="nc" id="L109">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
