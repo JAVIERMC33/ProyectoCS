@@ -1,5 +1,6 @@
 C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\MainTercerCommit.java
-C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\View\MainController.java
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\View\Main.java
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\View\MainFrame.java
 C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\Servicio\TareaService.java
 C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\Servicio\TareaServicioImpl.java
 C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\Model\Estado.java
@@ -8,6 +9,6 @@ C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\pro
 C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\Repositorio\TareaRepositorio.java
 C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\Model\Prioridad.java
 C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\Controller\TareaController.java
-C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\View\MainApp.java
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\Repositorio\PersistenciaException.java
 C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\Repositorio\TareaRepositorioImpl.java
 C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java\proyectofinal\Model\Tarea.java

@@ -5,101 +5,60 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import proyectofinal.Model.Tarea;
-import java.io.File;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+/**
+ * Implementación de TareaRepositorio que persiste datos en formato JSON.
+ */
 public class JsonTareaRepositorio implements TareaRepositorio {
-    private final File dataFile;
+    private final Path dataFilePath;
     private final ObjectMapper objectMapper;
-    private List<Tarea> tareas;
+    private final List<Tarea> tareas;
     private final AtomicLong idGenerator;
-
+    
     public JsonTareaRepositorio() {
-        this.dataFile = obtenerArchivoDatos();
+        this(Paths.get("data", "tareas.json"));
+    }
+    
+    // Constructor para testing
+    protected JsonTareaRepositorio(Path customPath) {
+        this.dataFilePath = customPath;
         this.objectMapper = configurarObjectMapper();
-        this.tareas = cargarTareas();
-        this.idGenerator = new AtomicLong(obtenerUltimoId() + 1);
-        imprimirInformacionInicial();
+        this.tareas = Collections.synchronizedList(cargarTareas());
+        this.idGenerator = new AtomicLong(calcularSiguienteId());
     }
-
-    private File obtenerArchivoDatos() {
-        // Crear directorio data si no existe
-        File dataDir = new File("data");
-        if (!dataDir.exists()) {
-            dataDir.mkdirs();
-        }
-        return new File(dataDir, "tareas.json");
-    }
-
-    private ObjectMapper configurarObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        return mapper;
-    }
-
-    private List<Tarea> cargarTareas() {
-        try {
-            if (dataFile.exists() && dataFile.length() > 0) {
-                return objectMapper.readValue(dataFile, new TypeReference<List<Tarea>>() {});
-            }
-        } catch (IOException e) {
-            System.err.println("Error al cargar tareas: " + e.getMessage());
-            // Crear archivo nuevo si hay error
-            try {
-                dataFile.createNewFile();
-                objectMapper.writeValue(dataFile, new ArrayList<Tarea>());
-            } catch (IOException ex) {
-                System.err.println("Error al crear archivo nuevo: " + ex.getMessage());
-            }
-        }
-        return new ArrayList<>();
-    }
-
-    private long obtenerUltimoId() {
-        return tareas.stream().mapToLong(Tarea::getId).max().orElse(0);
-    }
-
-    private synchronized void guardarTareas() {
-        try {
-            objectMapper.writeValue(dataFile, tareas);
-            System.out.println("Tareas guardadas en: " + dataFile.getAbsolutePath());
-        } catch (IOException e) {
-            System.err.println("Error al guardar tareas: " + e.getMessage());
-            throw new RuntimeException("Error al persistir datos", e);
-        }
-    }
-
-    private void imprimirInformacionInicial() {
-        System.out.println("\n=== Configuración del Repositorio ===");
-        System.out.println("Ubicación del archivo: " + dataFile.getAbsolutePath());
-        System.out.println("Tareas cargadas: " + tareas.size());
-        System.out.println("Siguiente ID disponible: " + idGenerator.get());
-    }
-
+    
     @Override
     public Tarea guardar(Tarea tarea) {
+        validarTareaNoNula(tarea);
+        
         if (tarea.getId() == null) {
             tarea.setId(idGenerator.getAndIncrement());
         }
+        
         tareas.add(tarea);
-        guardarTareas();
+        persistirTareas();
         return tarea;
     }
 
     @Override
     public Optional<Tarea> buscarPorId(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        
         return tareas.stream()
-                   .filter(t -> id != null && id.equals(t.getId()))
+                   .filter(t -> id.equals(t.getId()))
                    .findFirst();
     }
 
@@ -110,22 +69,43 @@ public class JsonTareaRepositorio implements TareaRepositorio {
 
     @Override
     public boolean eliminar(Long id) {
-        boolean eliminado = tareas.removeIf(t -> id != null && id.equals(t.getId()));
+        if (id == null) {
+            return false;
+        }
+        
+        boolean eliminado = tareas.removeIf(t -> id.equals(t.getId()));
         if (eliminado) {
-            guardarTareas();
+            persistirTareas();
         }
         return eliminado;
     }
 
     @Override
     public Tarea actualizar(Tarea tarea) {
-        if (tarea == null || tarea.getId() == null) {
-            throw new IllegalArgumentException("La tarea y su ID no pueden ser nulos");
+        validarTareaNoNula(tarea);
+        
+        if (tarea.getId() == null) {
+            throw new IllegalArgumentException("El ID de la tarea no puede ser nulo para actualizar");
         }
-        eliminar(tarea.getId());
-        tareas.add(tarea);
-        guardarTareas();
-        return tarea;
+        
+        // Buscar y actualizar la tarea existente 
+        Optional<Tarea> tareaExistente = tareas.stream()
+            .filter(t -> t.getId().equals(tarea.getId()))
+            .findFirst();
+        
+        if (tareaExistente.isPresent()) {
+            Tarea t = tareaExistente.get();
+            t.setTitulo(tarea.getTitulo());
+            t.setDescripcion(tarea.getDescripcion());
+            t.setFechaVencimiento(tarea.getFechaVencimiento());
+            t.setPrioridad(tarea.getPrioridad());
+            t.setEstado(tarea.getEstado());
+            
+            persistirTareas();
+            return t;
+        } else {
+            throw new IllegalArgumentException("No se encontró la tarea con ID: " + tarea.getId());
+        }
     }
 
     @Override
@@ -133,27 +113,86 @@ public class JsonTareaRepositorio implements TareaRepositorio {
         return id != null && tareas.stream().anyMatch(t -> id.equals(t.getId()));
     }
 
-    public void verificarEstadoRepositorio() {
-        System.out.println("\n=== Estado del Repositorio ===");
-        System.out.println("Ruta del archivo: " + dataFile.getAbsolutePath());
-        System.out.println("Existe archivo: " + dataFile.exists());
-        System.out.println("Tamaño archivo: " + dataFile.length() + " bytes");
-        System.out.println("Tareas en memoria: " + tareas.size());
-        System.out.println("Siguiente ID: " + idGenerator.get());
-    }
-    
+    @Override
     public List<Tarea> buscarPorPalabraClave(String palabraClave) {
-    if (palabraClave == null || palabraClave.trim().isEmpty()) {
-        return new ArrayList<>(); // Devuelve lista vacía si no hay palabra clave
+        if (palabraClave == null || palabraClave.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String palabra = palabraClave.toLowerCase().trim();
+        
+        return tareas.stream()
+                .filter(tarea -> contienePalabraClave(tarea, palabra))
+                .collect(Collectors.toList());
     }
 
-    String palabra = palabraClave.toLowerCase(); // Búsqueda case-insensitive
+    // Métodos auxiliares privados
+    private ObjectMapper configurarObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
+    }
 
-    return tareas.stream()
-            .filter(tarea -> 
-                (tarea.getTitulo() != null && tarea.getTitulo().toLowerCase().contains(palabra)) ||
-                (tarea.getDescripcion() != null && tarea.getDescripcion().toLowerCase().contains(palabra))
-            )
-            .collect(Collectors.toList());
-}
+    private List<Tarea> cargarTareas() {
+        try {
+            crearDirectorioSiNoExiste();
+            
+            if (Files.exists(dataFilePath) && Files.size(dataFilePath) > 0) {
+                return objectMapper.readValue(dataFilePath.toFile(), new TypeReference<List<Tarea>>() {});
+            }
+            
+            Files.createFile(dataFilePath);
+            return new ArrayList<>();
+            
+        } catch (IOException e) {
+            manejarErrorCarga(e);
+            return new ArrayList<>();
+        }
+    }
+
+    private void crearDirectorioSiNoExiste() throws IOException {
+        if (!Files.exists(dataFilePath.getParent())) {
+            Files.createDirectories(dataFilePath.getParent());
+        }
+    }
+
+    private long calcularSiguienteId() {
+        return tareas.stream()
+                   .mapToLong(Tarea::getId)
+                   .max()
+                   .orElse(0) + 1;
+    }
+
+    private synchronized void persistirTareas() {
+        try {
+            objectMapper.writeValue(dataFilePath.toFile(), tareas);
+        } catch (IOException e) {
+            throw new PersistenciaException("Error al guardar tareas en archivo", e);
+        }
+    }
+
+    private boolean contienePalabraClave(Tarea tarea, String palabra) {
+        return (tarea.getTitulo() != null && tarea.getTitulo().toLowerCase().contains(palabra)) ||
+               (tarea.getDescripcion() != null && tarea.getDescripcion().toLowerCase().contains(palabra));
+    }
+
+    private void validarTareaNoNula(Tarea tarea) {
+        if (tarea == null) {
+            throw new IllegalArgumentException("La tarea no puede ser nula");
+        }
+    }
+
+    private void manejarErrorCarga(IOException e) {
+        try {
+            Files.createDirectories(dataFilePath.getParent());
+            if (!Files.exists(dataFilePath)) {
+                Files.createFile(dataFilePath);
+            }
+            objectMapper.writeValue(dataFilePath.toFile(), Collections.emptyList());
+        } catch (IOException ex) {
+            throw new PersistenciaException("No se pudo inicializar el repositorio", ex);
+        }
+    }
 }

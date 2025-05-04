@@ -11,7 +11,6 @@ import proyectofinal.Servicio.TareaServicioImpl;
 
 public class MainTercerCommit {
     public static void main(String[] args) {
-        // Usamos JsonTareaRepository en lugar de TareaRepositoryImpl
         TareaRepositorio repository = new JsonTareaRepositorio();
         TareaServicioImpl service = new TareaServicioImpl(repository);
         

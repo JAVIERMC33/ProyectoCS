@@ -4,6 +4,7 @@ import proyectofinal.Model.Estado;
 import proyectofinal.Model.Prioridad;
 import proyectofinal.Model.Tarea;
 import proyectofinal.Servicio.TareaService;
+
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -13,32 +14,38 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class MainFrame extends JFrame {
-    private final TareaService tareaService;
-    private JTable tareasTable;
-    private DefaultTableModel tableModel;
-    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private JTextField searchField;
-    private ScheduledExecutorService searchScheduler;
+    private static final String APP_TITLE = "Gestión de Tareas";
+    static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     
+    private final TareaService tareaService;
+    private final ScheduledExecutorService searchScheduler;
+    private DefaultTableModel tableModel;
+    private JTable tareasTable;
+    private JTextField searchField;
+
     public MainFrame(TareaService tareaService) {
+        super(APP_TITLE);
         this.tareaService = tareaService;
         this.searchScheduler = Executors.newSingleThreadScheduledExecutor();
         initializeUI();
         loadTasks();
     }
-    
+
     private void initializeUI() {
-        setTitle("Gestión de Tareas");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1000, 600);
         setLocationRelativeTo(null);
         
-        // Modelo de tabla
+        setupTable();
+        setupMainPanel();
+    }
+
+    private void setupTable() {
         String[] columnNames = {"ID", "Título", "Descripción", "Fecha Vencimiento", "Prioridad", "Estado"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -55,10 +62,21 @@ public class MainFrame extends JFrame {
         tareasTable = new JTable(tableModel);
         tareasTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tareasTable.setAutoCreateRowSorter(true);
-        
-        // Panel principal
+    }
+
+    private void setupMainPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        mainPanel.add(createSearchFilterPanel(), BorderLayout.NORTH);
+        mainPanel.add(new JScrollPane(tareasTable), BorderLayout.CENTER);
+        mainPanel.add(createButtonPanel(), BorderLayout.SOUTH);
+        
+        add(mainPanel);
+    }
+
+    private JPanel createSearchFilterPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
         
         // Panel de búsqueda
         JPanel searchPanel = new JPanel(new BorderLayout(5, 5));
@@ -79,17 +97,20 @@ public class MainFrame extends JFrame {
         filterStatusButton.addActionListener(e -> filterByStatus());
         
         JButton showAllButton = new JButton("Mostrar Todas");
-        showAllButton.addActionListener(e -> {
-            searchField.setText("");
-            loadTasks();
-        });
+        showAllButton.addActionListener(e -> resetView());
         
         filterPanel.add(filterPriorityButton);
         filterPanel.add(filterStatusButton);
         filterPanel.add(showAllButton);
         
-        // Panel de botones
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        panel.add(searchPanel, BorderLayout.NORTH);
+        panel.add(filterPanel, BorderLayout.SOUTH);
+        
+        return panel;
+    }
+
+    private JPanel createButtonPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         
         JButton addButton = new JButton("Agregar");
         addButton.addActionListener(e -> showAddDialog());
@@ -100,244 +121,98 @@ public class MainFrame extends JFrame {
         JButton deleteButton = new JButton("Eliminar");
         deleteButton.addActionListener(e -> deleteTask());
         
-        buttonPanel.add(addButton);
-        buttonPanel.add(editButton);
-        buttonPanel.add(deleteButton);
+        panel.add(addButton);
+        panel.add(editButton);
+        panel.add(deleteButton);
         
-        // Panel superior combinado
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.add(searchPanel, BorderLayout.NORTH);
-        topPanel.add(filterPanel, BorderLayout.SOUTH);
-        
-        // Agregar componentes al panel principal
-        mainPanel.add(topPanel, BorderLayout.NORTH);
-        mainPanel.add(new JScrollPane(tareasTable), BorderLayout.CENTER);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-        
-        add(mainPanel);
+        return panel;
     }
-    
-    private void scheduleSearch() {
-        searchScheduler.schedule(() -> {
-            String searchText = searchField.getText().trim();
-            if (searchText.isEmpty()) {
-                loadTasks();
-            } else {
-                List<Tarea> resultados = tareaService.buscarPorPalabraClave(searchText);
-                SwingUtilities.invokeLater(() -> {
-                    tableModel.setRowCount(0);
-                    mostrarTareasEnTabla(resultados);
-                });
-            }
-        }, 300, TimeUnit.MILLISECONDS); // Retardo de 300ms para evitar búsquedas con cada tecla
+
+    private void resetView() {
+        searchField.setText("");
+        loadTasks();
     }
-    
+
     private void loadTasks() {
-        tableModel.setRowCount(0);
-        List<Tarea> tareas = tareaService.obtenerTodasLasTareas();
-        mostrarTareasEnTabla(tareas);
+        SwingUtilities.invokeLater(() -> {
+            tableModel.setRowCount(0);
+            List<Tarea> tareas = tareaService.obtenerTodasLasTareas();
+            mostrarTareasEnTabla(tareas);
+        });
     }
-    
+
     private void mostrarTareasEnTabla(List<Tarea> tareas) {
         for (Tarea tarea : tareas) {
             Object[] row = {
                 tarea.getId(),
                 tarea.getTitulo(),
                 tarea.getDescripcion(),
-                tarea.getFechaVencimiento().format(dateFormatter),
+                tarea.getFechaVencimiento().format(DATE_FORMATTER),
                 tarea.getPrioridad().toString(),
                 tarea.getEstado().toString()
             };
             tableModel.addRow(row);
         }
     }
-    
+
     private void showAddDialog() {
-        JDialog dialog = new JDialog(this, "Agregar Tarea", true);
-        dialog.setSize(500, 400);
-        dialog.setLocationRelativeTo(this);
-        
-        JPanel panel = new JPanel(new GridLayout(7, 2, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        JTextField titleField = new JTextField();
-        JTextArea descArea = new JTextArea(3, 20);
-        JScrollPane descScroll = new JScrollPane(descArea);
-        JTextField dateField = new JTextField(LocalDate.now().format(dateFormatter));
-        JComboBox<Prioridad> priorityCombo = new JComboBox<>(Prioridad.values());
-        JComboBox<Estado> statusCombo = new JComboBox<>(Estado.values());
-        JButton saveButton = new JButton("Guardar");
-        
-        panel.add(new JLabel("Título*:"));
-        panel.add(titleField);
-        panel.add(new JLabel("Descripción*:"));
-        panel.add(descScroll);
-        panel.add(new JLabel("Fecha (dd/MM/yyyy)*:"));
-        panel.add(dateField);
-        panel.add(new JLabel("Prioridad*:"));
-        panel.add(priorityCombo);
-        panel.add(new JLabel("Estado*:"));
-        panel.add(statusCombo);
-        panel.add(new JLabel("* Campos obligatorios"));
-        panel.add(saveButton);
-        
-        saveButton.addActionListener(e -> {
-            try {
-                // Validación de campos obligatorios
-                if (titleField.getText().trim().isEmpty()) {
-                    throw new IllegalArgumentException("El título no puede estar vacío");
-                }
-                if (descArea.getText().trim().isEmpty()) {
-                    throw new IllegalArgumentException("La descripción no puede estar vacía");
-                }
-                
-                LocalDate fecha = LocalDate.parse(dateField.getText(), dateFormatter);
-                
-                // Validación de fecha (permite el día actual)
-                if (fecha.isBefore(LocalDate.now())) {
-                    throw new IllegalArgumentException("La fecha no puede ser anterior al día actual");
-                }
-                
-                // Crear la tarea
-                Tarea nuevaTarea = new Tarea(
-                    null,
-                    titleField.getText(),
-                    descArea.getText(),
-                    fecha,
-                    (Prioridad) priorityCombo.getSelectedItem(),
-                    (Estado) statusCombo.getSelectedItem()
-                );
-                
-                tareaService.crearTarea(nuevaTarea);
-                loadTasks();
-                dialog.dispose();
-                JOptionPane.showMessageDialog(this, "Tarea creada exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } catch (DateTimeParseException ex) {
-                JOptionPane.showMessageDialog(dialog, "Formato de fecha inválido. Use dd/MM/yyyy", "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(dialog, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-        
-        dialog.add(panel);
-        dialog.setVisible(true);
+        new TaskDialog(this, "Agregar Tarea", tarea -> {
+            tareaService.crearTarea(tarea);
+            loadTasks();
+        }).setVisible(true);
     }
-    
-    @Override
-    public void dispose() {
-        searchScheduler.shutdownNow();
-        super.dispose();
-    }
-    
+
     private void showEditDialog() {
         int selectedRow = tareasTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Seleccione una tarea para editar", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            showWarning("Seleccione una tarea para editar");
             return;
         }
         
         Long taskId = (Long) tableModel.getValueAt(selectedRow, 0);
         var tareaOpt = tareaService.obtenerTareaPorId(taskId);
         
-        if (!tareaOpt.isPresent()) {
-            JOptionPane.showMessageDialog(this, "Tarea no encontrada", "Error", JOptionPane.ERROR_MESSAGE);
+        if (tareaOpt.isEmpty()) {
+            showError("Tarea no encontrada");
             return;
         }
         
-        Tarea tarea = tareaOpt.get();
-        JDialog dialog = new JDialog(this, "Editar Tarea", true);
-        dialog.setSize(500, 400);
-        dialog.setLocationRelativeTo(this);
-        
-        JPanel panel = new JPanel(new GridLayout(7, 2, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        JTextField titleField = new JTextField(tarea.getTitulo());
-        JTextArea descArea = new JTextArea(tarea.getDescripcion(), 3, 20);
-        JScrollPane descScroll = new JScrollPane(descArea);
-        JTextField dateField = new JTextField(tarea.getFechaVencimiento().format(dateFormatter));
-        JComboBox<Prioridad> priorityCombo = new JComboBox<>(Prioridad.values());
-        priorityCombo.setSelectedItem(tarea.getPrioridad());
-        JComboBox<Estado> statusCombo = new JComboBox<>(Estado.values());
-        statusCombo.setSelectedItem(tarea.getEstado());
-        JButton saveButton = new JButton("Guardar");
-        
-        panel.add(new JLabel("Título*:"));
-        panel.add(titleField);
-        panel.add(new JLabel("Descripción:"));
-        panel.add(descScroll);
-        panel.add(new JLabel("Fecha (dd/MM/yyyy)*:"));
-        panel.add(dateField);
-        panel.add(new JLabel("Prioridad*:"));
-        panel.add(priorityCombo);
-        panel.add(new JLabel("Estado*:"));
-        panel.add(statusCombo);
-        panel.add(new JLabel("* Campos obligatorios"));
-        panel.add(saveButton);
-        
-        saveButton.addActionListener(e -> {
+        Tarea tareaOriginal = tareaOpt.get();
+        new TaskDialog(this, "Editar Tarea", tareaOriginal, tareaEditada -> {
             try {
-                LocalDate fecha = LocalDate.parse(dateField.getText(), dateFormatter);
+                // Mantener el ID original de la tarea
+                tareaEditada.setId(tareaOriginal.getId());
                 
-                // Validación adicional de fecha
-                if (fecha.isBefore(LocalDate.now())) {
-                    throw new IllegalArgumentException("La fecha no puede ser anterior al día actual");
-                }
-                
-                tarea.setTitulo(titleField.getText());
-                tarea.setDescripcion(descArea.getText());
-                tarea.setFechaVencimiento(fecha);
-                tarea.setPrioridad((Prioridad) priorityCombo.getSelectedItem());
-                tarea.setEstado((Estado) statusCombo.getSelectedItem());
-                
-                if (tareaService.actualizarTarea(tarea)) {
+                if (tareaService.actualizarTarea(tareaEditada)) {
                     loadTasks();
-                    dialog.dispose();
-                    JOptionPane.showMessageDialog(this, "Tarea actualizada exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    showInfo("Tarea actualizada exitosamente");
                 } else {
-                    JOptionPane.showMessageDialog(dialog, "No se pudo actualizar la tarea", "Error", JOptionPane.ERROR_MESSAGE);
+                    showError("No se pudo actualizar la tarea");
                 }
-            } catch (DateTimeParseException ex) {
-                JOptionPane.showMessageDialog(dialog, "Formato de fecha inválido. Use dd/MM/yyyy", "Error", JOptionPane.ERROR_MESSAGE);
             } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                showError(ex.getMessage());
             }
-        });
-        
-        dialog.add(panel);
-        dialog.setVisible(true);
+        }).setVisible(true);
     }
-    
+
     private void deleteTask() {
         int selectedRow = tareasTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Seleccione una tarea para eliminar", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            showWarning("Seleccione una tarea para eliminar");
             return;
         }
         
-        int confirm = JOptionPane.showConfirmDialog(
-            this, 
-            "¿Está seguro de eliminar esta tarea?", 
-            "Confirmar eliminación", 
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE
-        );
-        
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (confirmAction("¿Está seguro de eliminar esta tarea?")) {
             Long taskId = (Long) tableModel.getValueAt(selectedRow, 0);
             if (tareaService.eliminarTarea(taskId)) {
                 loadTasks();
-                JOptionPane.showMessageDialog(this, "Tarea eliminada exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                showInfo("Tarea eliminada exitosamente");
             } else {
-                JOptionPane.showMessageDialog(this, "No se pudo eliminar la tarea", "Error", JOptionPane.ERROR_MESSAGE);
+                showError("No se pudo eliminar la tarea");
             }
         }
     }
-    
+
     private void filterByPriority() {
         Prioridad selected = (Prioridad) JOptionPane.showInputDialog(
             this,
@@ -350,12 +225,10 @@ public class MainFrame extends JFrame {
         );
         
         if (selected != null) {
-            List<Tarea> tareas = tareaService.filtrarPorPrioridad(selected);
-            tableModel.setRowCount(0);
-            mostrarTareasEnTabla(tareas);
+            filterTasks(() -> tareaService.filtrarPorPrioridad(selected));
         }
     }
-    
+
     private void filterByStatus() {
         Estado selected = (Estado) JOptionPane.showInputDialog(
             this,
@@ -368,14 +241,21 @@ public class MainFrame extends JFrame {
         );
         
         if (selected != null) {
-            List<Tarea> tareas = tareaService.filtrarPorEstado(selected);
-            tableModel.setRowCount(0);
-            mostrarTareasEnTabla(tareas);
+            filterTasks(() -> tareaService.filtrarPorEstado(selected));
         }
+    }
+
+    private void filterTasks(Supplier<List<Tarea>> filterSupplier) {
+        SwingUtilities.invokeLater(() -> {
+            tableModel.setRowCount(0);
+            mostrarTareasEnTabla(filterSupplier.get());
+        });
     }
 
     private DocumentListener createSearchDocumentListener() {
         return new DocumentListener() {
+            private ScheduledFuture<?> lastTask;
+            
             @Override
             public void insertUpdate(DocumentEvent e) {
                 scheduleSearch();
@@ -390,6 +270,155 @@ public class MainFrame extends JFrame {
             public void changedUpdate(DocumentEvent e) {
                 scheduleSearch();
             }
+            
+            private void scheduleSearch() {
+                if (lastTask != null && !lastTask.isDone()) {
+                    lastTask.cancel(false);
+                }
+                
+                lastTask = searchScheduler.schedule(() -> {
+                    String searchText = searchField.getText().trim();
+                    List<Tarea> resultados = searchText.isEmpty() ? 
+                        tareaService.obtenerTodasLasTareas() : 
+                        tareaService.buscarPorPalabraClave(searchText);
+                        
+                    SwingUtilities.invokeLater(() -> {
+                        tableModel.setRowCount(0);
+                        mostrarTareasEnTabla(resultados);
+                    });
+                }, 300, TimeUnit.MILLISECONDS);
+            }
         };
+    }
+
+    // Helpers para mensajes
+    private void showInfo(String message) {
+        JOptionPane.showMessageDialog(this, message, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void showWarning(String message) {
+        JOptionPane.showMessageDialog(this, message, "Advertencia", JOptionPane.WARNING_MESSAGE);
+    }
+    
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    
+    private boolean confirmAction(String message) {
+        return JOptionPane.showConfirmDialog(
+            this, 
+            message, 
+            "Confirmar", 
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        ) == JOptionPane.YES_OPTION;
+    }
+
+    @Override
+    public void dispose() {
+        try {
+            searchScheduler.shutdown();
+            if (!searchScheduler.awaitTermination(1, TimeUnit.SECONDS)) {
+                searchScheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            searchScheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        super.dispose();
+    }
+}
+
+// Clase para el diálogo de tareas (nueva clase separada)
+class TaskDialog extends JDialog {
+    private final JTextField titleField = new JTextField();
+    private final JTextArea descArea = new JTextArea(3, 20);
+    private final JTextField dateField = new JTextField(LocalDate.now().format(MainFrame.DATE_FORMATTER));
+    private final JComboBox<Prioridad> priorityCombo = new JComboBox<>(Prioridad.values());
+    private final JComboBox<Estado> statusCombo = new JComboBox<>(Estado.values());
+
+    public TaskDialog(JFrame parent, String title, Consumer<Tarea> onSave) {
+        this(parent, title, null, onSave);
+    }
+
+    public TaskDialog(JFrame parent, String title, Tarea tarea, Consumer<Tarea> onSave) {
+        super(parent, title, true);
+        setSize(500, 400);
+        setLocationRelativeTo(parent);
+        
+        if (tarea != null) {
+            titleField.setText(tarea.getTitulo());
+            descArea.setText(tarea.getDescripcion());
+            dateField.setText(tarea.getFechaVencimiento().format(MainFrame.DATE_FORMATTER));
+            priorityCombo.setSelectedItem(tarea.getPrioridad());
+            statusCombo.setSelectedItem(tarea.getEstado());
+        }
+        
+        setupUI(onSave);
+    }
+
+    private void setupUI(Consumer<Tarea> onSave) {
+        JPanel panel = new JPanel(new GridLayout(7, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        panel.add(new JLabel("Título*:"));
+        panel.add(titleField);
+        panel.add(new JLabel("Descripción:"));
+        panel.add(new JScrollPane(descArea));
+        panel.add(new JLabel("Fecha (dd/MM/yyyy)*:"));
+        panel.add(dateField);
+        panel.add(new JLabel("Prioridad*:"));
+        panel.add(priorityCombo);
+        panel.add(new JLabel("Estado*:"));
+        panel.add(statusCombo);
+        panel.add(new JLabel("* Campos obligatorios"));
+        
+        JButton saveButton = new JButton("Guardar");
+        saveButton.addActionListener(e -> saveTask(onSave));
+        panel.add(saveButton);
+        
+        add(panel);
+    }
+
+    private void saveTask(Consumer<Tarea> onSave) {
+        try {
+            validateFields();
+            LocalDate fecha = parseDate();
+            
+            Tarea tarea = new Tarea(
+                null, // ID se asignará al guardar
+                titleField.getText().trim(),
+                descArea.getText().trim(),
+                fecha,
+                (Prioridad) priorityCombo.getSelectedItem(),
+                (Estado) statusCombo.getSelectedItem()
+            );
+            
+            onSave.accept(tarea);
+            dispose();
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void validateFields() {
+        if (titleField.getText().trim().isEmpty()) {
+            throw new IllegalArgumentException("El título no puede estar vacío");
+        }
+        if (dateField.getText().trim().isEmpty()) {
+            throw new IllegalArgumentException("La fecha no puede estar vacía");
+        }
+    }
+
+    private LocalDate parseDate() {
+        try {
+            LocalDate fecha = LocalDate.parse(dateField.getText(), MainFrame.DATE_FORMATTER);
+            if (fecha.isBefore(LocalDate.now())) {
+                throw new IllegalArgumentException("La fecha no puede ser anterior al día actual");
+            }
+            return fecha;
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Formato de fecha inválido. Use dd/MM/yyyy");
+        }
     }
 }

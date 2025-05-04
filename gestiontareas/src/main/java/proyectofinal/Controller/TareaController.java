@@ -6,10 +6,15 @@ import proyectofinal.Model.Tarea;
 import proyectofinal.Servicio.TareaService;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
+/**
+ * Controlador para gestionar las operaciones relacionadas con tareas.
+ * Maneja la interacción entre el usuario y el servicio de tareas.
+ */
 public class TareaController {
     private final TareaService tareaService;
     private final Scanner scanner;
@@ -19,75 +24,48 @@ public class TareaController {
         this.scanner = new Scanner(System.in);
     }
 
-    
+    /**
+     * Crea una nueva tarea solicitando los datos al usuario.
+     */
     public void crearTarea() {
         System.out.println("\n--- Crear Nueva Tarea ---");
         
-        System.out.print("Título: ");
-        String titulo = scanner.nextLine();
+        String titulo = leerCampoRequerido("Título: ");
+        String descripcion = leerCampoRequerido("Descripción: ");
+        LocalDate fechaVencimiento = leerFechaValida();
+        Prioridad prioridad = leerPrioridadValida();
         
-        System.out.print("Descripción: ");
-        String descripcion = scanner.nextLine();
-        
-        System.out.print("Fecha de vencimiento (YYYY-MM-DD): ");
-        LocalDate fechaVencimiento = LocalDate.parse(scanner.nextLine());
-        
-        System.out.print("Prioridad (ALTA, MEDIA, BAJA): ");
-        Prioridad prioridad = Prioridad.valueOf(scanner.nextLine().toUpperCase());
-        
-        Estado estado = Estado.PENDIENTE;
-        
-        Tarea nuevaTarea = new Tarea(null, titulo, descripcion, fechaVencimiento, prioridad, estado);
+        Tarea nuevaTarea = new Tarea(null, titulo, descripcion, fechaVencimiento, prioridad, Estado.PENDIENTE);
         tareaService.crearTarea(nuevaTarea);
         System.out.println("Tarea creada exitosamente!");
     }
 
+    /**
+     * Lista las tareas ordenadas según la opción seleccionada por el usuario.
+     */
     public void listarTareas() {
         System.out.println("\n--- Lista de Tareas ---");
         System.out.println("1. Ordenar por fecha de vencimiento");
         System.out.println("2. Ordenar por prioridad");
-        System.out.print("Seleccione una opción: ");
-        int opcion = scanner.nextInt();
-        scanner.nextLine(); // Consumir el salto de línea
+        int opcion = leerEnteroEnRango("Seleccione una opción: ", 1, 2);
         
-        List<Tarea> tareas;
-        if (opcion == 1) {
-            tareas = tareaService.ordenarTareasPorFechaVencimiento();
-        } else {
-            tareas = tareaService.ordenarTareasPorPrioridad();
-        }
+        List<Tarea> tareas = (opcion == 1) 
+            ? tareaService.ordenarTareasPorFechaVencimiento() 
+            : tareaService.ordenarTareasPorPrioridad();
         
         imprimirTareasEnTabla(tareas);
     }
 
-    private void imprimirTareasEnTabla(List<Tarea> tareas) {
-        // Implementación para imprimir en formato de tabla
-        // Usando System.out.printf para formatear la salida
-        System.out.println("+----+----------------------+----------------------+----------------+----------+--------------+");
-        System.out.println("| ID | Título               | Descripción          | Fecha Venc.    | Prioridad| Estado       |");
-        System.out.println("+----+----------------------+----------------------+----------------+----------+--------------+");
-        
-        for (Tarea t : tareas) {
-            System.out.printf("| %-2d | %-20s | %-20s | %-14s | %-8s | %-12s |\n",
-                    t.getId(), 
-                    t.getTitulo().length() > 20 ? t.getTitulo().substring(0, 17) + "..." : t.getTitulo(),
-                    t.getDescripcion() != null && t.getDescripcion().length() > 20 ? 
-                        t.getDescripcion().substring(0, 17) + "..." : t.getDescripcion(),
-                    t.getFechaVencimiento().toString(),
-                    t.getPrioridad(),
-                    t.getEstado());
-        }
-        System.out.println("+----+----------------------+----------------------+----------------+----------+--------------+");
-    }
-
+    /**
+     * Actualiza una tarea existente solicitando los nuevos datos al usuario.
+     */
     public void actualizarTarea() {
         System.out.println("\n--- Actualizar Tarea ---");
         listarTareas();
-        System.out.print("Ingrese el ID de la tarea a actualizar: ");
-        Long id = scanner.nextLong();
-        scanner.nextLine(); // Consumir el salto de línea
         
+        Long id = leerIdTarea("Ingrese el ID de la tarea a actualizar: ");
         Optional<Tarea> tareaOpt = tareaService.obtenerTareaPorId(id);
+        
         if (tareaOpt.isEmpty()) {
             System.out.println("No se encontró la tarea con ID: " + id);
             return;
@@ -96,13 +74,11 @@ public class TareaController {
         Tarea tarea = tareaOpt.get();
         System.out.println("Actualizando tarea: " + tarea.getTitulo());
         
-        System.out.print("Nuevo título (actual: " + tarea.getTitulo() + "): ");
-        String nuevoTitulo = scanner.nextLine();
-        if (!nuevoTitulo.isEmpty()) {
-            tarea.setTitulo(nuevoTitulo);
-        }
-        
-        // Repetir para otros campos...
+        actualizarCampo(tarea, "título", tarea.getTitulo(), tarea::setTitulo);
+        actualizarCampo(tarea, "descripción", tarea.getDescripcion(), tarea::setDescripcion);
+        actualizarFecha(tarea);
+        actualizarPrioridad(tarea);
+        actualizarEstado(tarea);
         
         if (tareaService.actualizarTarea(tarea)) {
             System.out.println("Tarea actualizada exitosamente!");
@@ -111,17 +87,17 @@ public class TareaController {
         }
     }
 
+    /**
+     * Elimina una tarea previa confirmación del usuario.
+     */
     public void eliminarTarea() {
         System.out.println("\n--- Eliminar Tarea ---");
         listarTareas();
-        System.out.print("Ingrese el ID de la tarea a eliminar: ");
-        Long id = scanner.nextLong();
-        scanner.nextLine(); // Consumir el salto de línea
         
-        System.out.print("¿Está seguro que desea eliminar esta tarea? (S/N): ");
-        String confirmacion = scanner.nextLine();
+        Long id = leerIdTarea("Ingrese el ID de la tarea a eliminar: ");
+        boolean confirmado = confirmarAccion("¿Está seguro que desea eliminar esta tarea? (S/N): ");
         
-        if (confirmacion.equalsIgnoreCase("S")) {
+        if (confirmado) {
             if (tareaService.eliminarTarea(id)) {
                 System.out.println("Tarea eliminada exitosamente!");
             } else {
@@ -132,48 +108,199 @@ public class TareaController {
         }
     }
 
+    /**
+     * Muestra el menú de búsqueda y filtrado de tareas.
+     */
     public void menuBusquedaFiltrado() {
         System.out.println("\n--- Buscar/Filtrar Tareas ---");
         System.out.println("1. Filtrar por estado");
         System.out.println("2. Filtrar por prioridad");
         System.out.println("3. Filtrar por fecha de vencimiento");
         System.out.println("4. Buscar por palabra clave");
-        System.out.print("Seleccione una opción: ");
-        int opcion = scanner.nextInt();
-        scanner.nextLine(); // Consumir el salto de línea
         
-        List<Tarea> resultados = null;
-        
-        switch (opcion) {
-            case 1:
-                System.out.print("Ingrese estado (PENDIENTE, EN_PROGRESO, COMPLETADA): ");
-                Estado estado = Estado.valueOf(scanner.nextLine().toUpperCase());
-                resultados = tareaService.filtrarPorEstado(estado);
-                break;
-            case 2:
-                System.out.print("Ingrese prioridad (ALTA, MEDIA, BAJA): ");
-                Prioridad prioridad = Prioridad.valueOf(scanner.nextLine().toUpperCase());
-                resultados = tareaService.filtrarPorPrioridad(prioridad);
-                break;
-            case 3:
-                System.out.print("Ingrese fecha (YYYY-MM-DD): ");
-                LocalDate fecha = LocalDate.parse(scanner.nextLine());
-                resultados = tareaService.filtrarPorFechaVencimiento(fecha);
-                break;
-            case 4:
-                System.out.print("Ingrese palabra clave: ");
-                String palabra = scanner.nextLine();
-                resultados = tareaService.buscarPorPalabraClave(palabra);
-                break;
-            default:
-                System.out.println("Opción no válida");
-                return;
-        }
+        int opcion = leerEnteroEnRango("Seleccione una opción: ", 1, 4);
+        List<Tarea> resultados = procesarOpcionBusqueda(opcion);
         
         if (resultados != null && !resultados.isEmpty()) {
             imprimirTareasEnTabla(resultados);
         } else {
             System.out.println("No se encontraron tareas con los criterios especificados");
         }
+    }
+
+    // Métodos auxiliares privados
+
+    private List<Tarea> procesarOpcionBusqueda(int opcion) {
+        switch (opcion) {
+            case 1:
+                Estado estado = leerEstadoValido();
+                return tareaService.filtrarPorEstado(estado);
+            case 2:
+                Prioridad prioridad = leerPrioridadValida();
+                return tareaService.filtrarPorPrioridad(prioridad);
+            case 3:
+                LocalDate fecha = leerFechaValida();
+                return tareaService.filtrarPorFechaVencimiento(fecha);
+            case 4:
+                String palabra = leerCampoRequerido("Ingrese palabra clave: ");
+                return tareaService.buscarPorPalabraClave(palabra);
+            default:
+                return null;
+        }
+    }
+
+    private void actualizarCampo(Tarea tarea, String nombreCampo, String valorActual, java.util.function.Consumer<String> setter) {
+        String nuevoValor = leerCampoOpcional(
+            "Nuevo " + nombreCampo + " (actual: " + valorActual + "): ");
+        if (!nuevoValor.isEmpty()) {
+            setter.accept(nuevoValor);
+        }
+    }
+
+    private void actualizarFecha(Tarea tarea) {
+        System.out.print("Nueva fecha (actual: " + tarea.getFechaVencimiento() + ") [dejar vacío para mantener]: ");
+        String input = scanner.nextLine();
+        if (!input.isEmpty()) {
+            try {
+                tarea.setFechaVencimiento(LocalDate.parse(input));
+            } catch (DateTimeParseException e) {
+                System.out.println("Formato de fecha inválido. No se actualizó la fecha.");
+            }
+        }
+    }
+
+    private void actualizarPrioridad(Tarea tarea) {
+        System.out.print("Nueva prioridad (actual: " + tarea.getPrioridad() + ") [dejar vacío para mantener]: ");
+        String input = scanner.nextLine();
+        if (!input.isEmpty()) {
+            try {
+                tarea.setPrioridad(Prioridad.valueOf(input.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                System.out.println("Prioridad inválida. No se actualizó la prioridad.");
+            }
+        }
+    }
+
+    private void actualizarEstado(Tarea tarea) {
+        System.out.print("Nuevo estado (actual: " + tarea.getEstado() + ") [dejar vacío para mantener]: ");
+        String input = scanner.nextLine();
+        if (!input.isEmpty()) {
+            try {
+                tarea.setEstado(Estado.valueOf(input.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                System.out.println("Estado inválido. No se actualizó el estado.");
+            }
+        }
+    }
+
+    private String leerCampoRequerido(String mensaje) {
+        String input;
+        do {
+            System.out.print(mensaje);
+            input = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                System.out.println("Este campo es requerido. Por favor ingrese un valor.");
+            }
+        } while (input.isEmpty());
+        return input;
+    }
+
+    private String leerCampoOpcional(String mensaje) {
+        System.out.print(mensaje);
+        return scanner.nextLine().trim();
+    }
+
+    private LocalDate leerFechaValida() {
+        while (true) {
+            try {
+                System.out.print("Fecha de vencimiento (YYYY-MM-DD): ");
+                return LocalDate.parse(scanner.nextLine());
+            } catch (DateTimeParseException e) {
+                System.out.println("Formato de fecha inválido. Use YYYY-MM-DD.");
+            }
+        }
+    }
+
+    private Prioridad leerPrioridadValida() {
+        while (true) {
+            try {
+                System.out.print("Prioridad (ALTA, MEDIA, BAJA): ");
+                return Prioridad.valueOf(scanner.nextLine().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.out.println("Prioridad inválida. Las opciones son: ALTA, MEDIA, BAJA.");
+            }
+        }
+    }
+
+    private Estado leerEstadoValido() {
+        while (true) {
+            try {
+                System.out.print("Ingrese estado (PENDIENTE, EN_PROGRESO, COMPLETADA): ");
+                return Estado.valueOf(scanner.nextLine().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.out.println("Estado inválido. Las opciones son: PENDIENTE, EN_PROGRESO, COMPLETADA.");
+            }
+        }
+    }
+
+    private int leerEnteroEnRango(String mensaje, int min, int max) {
+        int opcion;
+        while (true) {
+            try {
+                System.out.print(mensaje);
+                opcion = Integer.parseInt(scanner.nextLine());
+                if (opcion >= min && opcion <= max) {
+                    break;
+                }
+                System.out.printf("Ingrese un número entre %d y %d.\n", min, max);
+            } catch (NumberFormatException e) {
+                System.out.println("Entrada inválida. Ingrese un número.");
+            }
+        }
+        return opcion;
+    }
+
+    private Long leerIdTarea(String mensaje) {
+        while (true) {
+            try {
+                System.out.print(mensaje);
+                return Long.parseLong(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("ID inválido. Ingrese un número.");
+            }
+        }
+    }
+
+    private boolean confirmarAccion(String mensaje) {
+        System.out.print(mensaje);
+        String respuesta = scanner.nextLine().trim();
+        return respuesta.equalsIgnoreCase("S");
+    }
+
+    private void imprimirTareasEnTabla(List<Tarea> tareas) {
+        if (tareas == null || tareas.isEmpty()) {
+            System.out.println("No hay tareas para mostrar");
+            return;
+        }
+
+        System.out.println("+----+----------------------+----------------------+----------------+----------+--------------+");
+        System.out.println("| ID | Título               | Descripción          | Fecha Venc.    | Prioridad| Estado       |");
+        System.out.println("+----+----------------------+----------------------+----------------+----------+--------------+");
+        
+        for (Tarea t : tareas) {
+            System.out.printf("| %-2d | %-20s | %-20s | %-14s | %-8s | %-12s |\n",
+                    t.getId(), 
+                    truncarTexto(t.getTitulo(), 20),
+                    truncarTexto(t.getDescripcion(), 20),
+                    t.getFechaVencimiento(),
+                    t.getPrioridad(),
+                    t.getEstado());
+        }
+        System.out.println("+----+----------------------+----------------------+----------------+----------+--------------+");
+    }
+
+    private String truncarTexto(String texto, int maxLength) {
+        if (texto == null) return "";
+        return texto.length() > maxLength ? texto.substring(0, maxLength - 3) + "..." : texto;
     }
 }
