@@ -1,1 +1,28 @@
-[ ]
+[ {
+  "id" : 2,
+  "titulo" : "prueba 2 editada",
+  "descripcion" : "prueba 2",
+  "fechaVencimiento" : "2025-05-04",
+  "prioridad" : {
+    "descripcion" : "Alta"
+  },
+  "estado" : "Completada"
+}, {
+  "id" : 3,
+  "titulo" : "prueba busqueda",
+  "descripcion" : "prueba vusqueda",
+  "fechaVencimiento" : "2025-05-04",
+  "prioridad" : {
+    "descripcion" : "Alta"
+  },
+  "estado" : "En progreso"
+}, {
+  "id" : 4,
+  "titulo" : "prueba eliminada",
+  "descripcion" : "prueba eliminada",
+  "fechaVencimiento" : "2025-05-04",
+  "prioridad" : {
+    "descripcion" : "Alta"
+  },
+  "estado" : "Pendiente"
+} ]
