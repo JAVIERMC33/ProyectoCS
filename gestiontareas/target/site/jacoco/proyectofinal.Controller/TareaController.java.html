@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TareaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ProyectoFinalCS</a> &gt; <a href="index.source.html" class="el_package">proyectofinal.Controller</a> &gt; <span class="el_source">TareaController.java</span></div><h1>TareaController.java</h1><pre class="source lang-java linenums">package proyectofinal.Controller;
+
+import proyectofinal.Model.Estado;
+import proyectofinal.Model.Prioridad;
+import proyectofinal.Model.Tarea;
+import proyectofinal.Servicio.TareaService;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Optional;
+import java.util.Scanner;
+
+/**
+ * Controlador para gestionar las operaciones relacionadas con tareas.
+ * Maneja la interacción entre el usuario y el servicio de tareas.
+ */
+public class TareaController {
+    private final TareaService tareaService;
+    private final Scanner scanner;
+
+<span class="nc" id="L22">    public TareaController(TareaService tareaService) {</span>
+<span class="nc" id="L23">        this.tareaService = tareaService;</span>
+<span class="nc" id="L24">        this.scanner = new Scanner(System.in);</span>
+<span class="nc" id="L25">    }</span>
+
+    /**
+     * Crea una nueva tarea solicitando los datos al usuario.
+     */
+    public void crearTarea() {
+<span class="nc" id="L31">        System.out.println(&quot;\n--- Crear Nueva Tarea ---&quot;);</span>
+        
+<span class="nc" id="L33">        String titulo = leerCampoRequerido(&quot;Título: &quot;);</span>
+<span class="nc" id="L34">        String descripcion = leerCampoRequerido(&quot;Descripción: &quot;);</span>
+<span class="nc" id="L35">        LocalDate fechaVencimiento = leerFechaValida();</span>
+<span class="nc" id="L36">        Prioridad prioridad = leerPrioridadValida();</span>
+        
+<span class="nc" id="L38">        Tarea nuevaTarea = new Tarea(null, titulo, descripcion, fechaVencimiento, prioridad, Estado.PENDIENTE);</span>
+<span class="nc" id="L39">        tareaService.crearTarea(nuevaTarea);</span>
+<span class="nc" id="L40">        System.out.println(&quot;Tarea creada exitosamente!&quot;);</span>
+<span class="nc" id="L41">    }</span>
+
+    /**
+     * Lista las tareas ordenadas según la opción seleccionada por el usuario.
+     */
+    public void listarTareas() {
+<span class="nc" id="L47">        System.out.println(&quot;\n--- Lista de Tareas ---&quot;);</span>
+<span class="nc" id="L48">        System.out.println(&quot;1. Ordenar por fecha de vencimiento&quot;);</span>
+<span class="nc" id="L49">        System.out.println(&quot;2. Ordenar por prioridad&quot;);</span>
+<span class="nc" id="L50">        int opcion = leerEnteroEnRango(&quot;Seleccione una opción: &quot;, 1, 2);</span>
+        
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        List&lt;Tarea&gt; tareas = (opcion == 1) </span>
+<span class="nc" id="L53">            ? tareaService.ordenarTareasPorFechaVencimiento() </span>
+<span class="nc" id="L54">            : tareaService.ordenarTareasPorPrioridad();</span>
+        
+<span class="nc" id="L56">        imprimirTareasEnTabla(tareas);</span>
+<span class="nc" id="L57">    }</span>
+
+    /**
+     * Actualiza una tarea existente solicitando los nuevos datos al usuario.
+     */
+    public void actualizarTarea() {
+<span class="nc" id="L63">        System.out.println(&quot;\n--- Actualizar Tarea ---&quot;);</span>
+<span class="nc" id="L64">        listarTareas();</span>
+        
+<span class="nc" id="L66">        Long id = leerIdTarea(&quot;Ingrese el ID de la tarea a actualizar: &quot;);</span>
+<span class="nc" id="L67">        Optional&lt;Tarea&gt; tareaOpt = tareaService.obtenerTareaPorId(id);</span>
+        
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (tareaOpt.isEmpty()) {</span>
+<span class="nc" id="L70">            System.out.println(&quot;No se encontró la tarea con ID: &quot; + id);</span>
+<span class="nc" id="L71">            return;</span>
+        }
+        
+<span class="nc" id="L74">        Tarea tarea = tareaOpt.get();</span>
+<span class="nc" id="L75">        System.out.println(&quot;Actualizando tarea: &quot; + tarea.getTitulo());</span>
+        
+<span class="nc" id="L77">        actualizarCampo(tarea, &quot;título&quot;, tarea.getTitulo(), tarea::setTitulo);</span>
+<span class="nc" id="L78">        actualizarCampo(tarea, &quot;descripción&quot;, tarea.getDescripcion(), tarea::setDescripcion);</span>
+<span class="nc" id="L79">        actualizarFecha(tarea);</span>
+<span class="nc" id="L80">        actualizarPrioridad(tarea);</span>
+<span class="nc" id="L81">        actualizarEstado(tarea);</span>
+        
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (tareaService.actualizarTarea(tarea)) {</span>
+<span class="nc" id="L84">            System.out.println(&quot;Tarea actualizada exitosamente!&quot;);</span>
+        } else {
+<span class="nc" id="L86">            System.out.println(&quot;Error al actualizar la tarea&quot;);</span>
+        }
+<span class="nc" id="L88">    }</span>
+
+    /**
+     * Elimina una tarea previa confirmación del usuario.
+     */
+    public void eliminarTarea() {
+<span class="nc" id="L94">        System.out.println(&quot;\n--- Eliminar Tarea ---&quot;);</span>
+<span class="nc" id="L95">        listarTareas();</span>
+        
+<span class="nc" id="L97">        Long id = leerIdTarea(&quot;Ingrese el ID de la tarea a eliminar: &quot;);</span>
+<span class="nc" id="L98">        boolean confirmado = confirmarAccion(&quot;¿Está seguro que desea eliminar esta tarea? (S/N): &quot;);</span>
+        
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (confirmado) {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (tareaService.eliminarTarea(id)) {</span>
+<span class="nc" id="L102">                System.out.println(&quot;Tarea eliminada exitosamente!&quot;);</span>
+            } else {
+<span class="nc" id="L104">                System.out.println(&quot;No se encontró la tarea con ID: &quot; + id);</span>
+            }
+        } else {
+<span class="nc" id="L107">            System.out.println(&quot;Eliminación cancelada&quot;);</span>
+        }
+<span class="nc" id="L109">    }</span>
+
+    /**
+     * Muestra el menú de búsqueda y filtrado de tareas.
+     */
+    public void menuBusquedaFiltrado() {
+<span class="nc" id="L115">        System.out.println(&quot;\n--- Buscar/Filtrar Tareas ---&quot;);</span>
+<span class="nc" id="L116">        System.out.println(&quot;1. Filtrar por estado&quot;);</span>
+<span class="nc" id="L117">        System.out.println(&quot;2. Filtrar por prioridad&quot;);</span>
+<span class="nc" id="L118">        System.out.println(&quot;3. Filtrar por fecha de vencimiento&quot;);</span>
+<span class="nc" id="L119">        System.out.println(&quot;4. Buscar por palabra clave&quot;);</span>
+        
+<span class="nc" id="L121">        int opcion = leerEnteroEnRango(&quot;Seleccione una opción: &quot;, 1, 4);</span>
+<span class="nc" id="L122">        List&lt;Tarea&gt; resultados = procesarOpcionBusqueda(opcion);</span>
+        
+<span class="nc bnc" id="L124" title="All 4 branches missed.">        if (resultados != null &amp;&amp; !resultados.isEmpty()) {</span>
+<span class="nc" id="L125">            imprimirTareasEnTabla(resultados);</span>
+        } else {
+<span class="nc" id="L127">            System.out.println(&quot;No se encontraron tareas con los criterios especificados&quot;);</span>
+        }
+<span class="nc" id="L129">    }</span>
+
+    // Métodos auxiliares privados
+
+    private List&lt;Tarea&gt; procesarOpcionBusqueda(int opcion) {
+<span class="nc bnc" id="L134" title="All 5 branches missed.">        switch (opcion) {</span>
+            case 1:
+<span class="nc" id="L136">                Estado estado = leerEstadoValido();</span>
+<span class="nc" id="L137">                return tareaService.filtrarPorEstado(estado);</span>
+            case 2:
+<span class="nc" id="L139">                Prioridad prioridad = leerPrioridadValida();</span>
+<span class="nc" id="L140">                return tareaService.filtrarPorPrioridad(prioridad);</span>
+            case 3:
+<span class="nc" id="L142">                LocalDate fecha = leerFechaValida();</span>
+<span class="nc" id="L143">                return tareaService.filtrarPorFechaVencimiento(fecha);</span>
+            case 4:
+<span class="nc" id="L145">                String palabra = leerCampoRequerido(&quot;Ingrese palabra clave: &quot;);</span>
+<span class="nc" id="L146">                return tareaService.buscarPorPalabraClave(palabra);</span>
+            default:
+<span class="nc" id="L148">                return null;</span>
+        }
+    }
+
+    private void actualizarCampo(Tarea tarea, String nombreCampo, String valorActual, java.util.function.Consumer&lt;String&gt; setter) {
+<span class="nc" id="L153">        String nuevoValor = leerCampoOpcional(</span>
+            &quot;Nuevo &quot; + nombreCampo + &quot; (actual: &quot; + valorActual + &quot;): &quot;);
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (!nuevoValor.isEmpty()) {</span>
+<span class="nc" id="L156">            setter.accept(nuevoValor);</span>
+        }
+<span class="nc" id="L158">    }</span>
+
+    private void actualizarFecha(Tarea tarea) {
+<span class="nc" id="L161">        System.out.print(&quot;Nueva fecha (actual: &quot; + tarea.getFechaVencimiento() + &quot;) [dejar vacío para mantener]: &quot;);</span>
+<span class="nc" id="L162">        String input = scanner.nextLine();</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        if (!input.isEmpty()) {</span>
+            try {
+<span class="nc" id="L165">                tarea.setFechaVencimiento(LocalDate.parse(input));</span>
+<span class="nc" id="L166">            } catch (DateTimeParseException e) {</span>
+<span class="nc" id="L167">                System.out.println(&quot;Formato de fecha inválido. No se actualizó la fecha.&quot;);</span>
+<span class="nc" id="L168">            }</span>
+        }
+<span class="nc" id="L170">    }</span>
+
+    private void actualizarPrioridad(Tarea tarea) {
+<span class="nc" id="L173">        System.out.print(&quot;Nueva prioridad (actual: &quot; + tarea.getPrioridad() + &quot;) [dejar vacío para mantener]: &quot;);</span>
+<span class="nc" id="L174">        String input = scanner.nextLine();</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (!input.isEmpty()) {</span>
+            try {
+<span class="nc" id="L177">                tarea.setPrioridad(Prioridad.valueOf(input.toUpperCase()));</span>
+<span class="nc" id="L178">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L179">                System.out.println(&quot;Prioridad inválida. No se actualizó la prioridad.&quot;);</span>
+<span class="nc" id="L180">            }</span>
+        }
+<span class="nc" id="L182">    }</span>
+
+    private void actualizarEstado(Tarea tarea) {
+<span class="nc" id="L185">        System.out.print(&quot;Nuevo estado (actual: &quot; + tarea.getEstado() + &quot;) [dejar vacío para mantener]: &quot;);</span>
+<span class="nc" id="L186">        String input = scanner.nextLine();</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        if (!input.isEmpty()) {</span>
+            try {
+<span class="nc" id="L189">                tarea.setEstado(Estado.valueOf(input.toUpperCase()));</span>
+<span class="nc" id="L190">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L191">                System.out.println(&quot;Estado inválido. No se actualizó el estado.&quot;);</span>
+<span class="nc" id="L192">            }</span>
+        }
+<span class="nc" id="L194">    }</span>
+
+    private String leerCampoRequerido(String mensaje) {
+        String input;
+        do {
+<span class="nc" id="L199">            System.out.print(mensaje);</span>
+<span class="nc" id="L200">            input = scanner.nextLine().trim();</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            if (input.isEmpty()) {</span>
+<span class="nc" id="L202">                System.out.println(&quot;Este campo es requerido. Por favor ingrese un valor.&quot;);</span>
+            }
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        } while (input.isEmpty());</span>
+<span class="nc" id="L205">        return input;</span>
+    }
+
+    private String leerCampoOpcional(String mensaje) {
+<span class="nc" id="L209">        System.out.print(mensaje);</span>
+<span class="nc" id="L210">        return scanner.nextLine().trim();</span>
+    }
+
+    private LocalDate leerFechaValida() {
+        while (true) {
+            try {
+<span class="nc" id="L216">                System.out.print(&quot;Fecha de vencimiento (YYYY-MM-DD): &quot;);</span>
+<span class="nc" id="L217">                return LocalDate.parse(scanner.nextLine());</span>
+<span class="nc" id="L218">            } catch (DateTimeParseException e) {</span>
+<span class="nc" id="L219">                System.out.println(&quot;Formato de fecha inválido. Use YYYY-MM-DD.&quot;);</span>
+<span class="nc" id="L220">            }</span>
+        }
+    }
+
+    private Prioridad leerPrioridadValida() {
+        while (true) {
+            try {
+<span class="nc" id="L227">                System.out.print(&quot;Prioridad (ALTA, MEDIA, BAJA): &quot;);</span>
+<span class="nc" id="L228">                return Prioridad.valueOf(scanner.nextLine().toUpperCase());</span>
+<span class="nc" id="L229">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L230">                System.out.println(&quot;Prioridad inválida. Las opciones son: ALTA, MEDIA, BAJA.&quot;);</span>
+<span class="nc" id="L231">            }</span>
+        }
+    }
+
+    private Estado leerEstadoValido() {
+        while (true) {
+            try {
+<span class="nc" id="L238">                System.out.print(&quot;Ingrese estado (PENDIENTE, EN_PROGRESO, COMPLETADA): &quot;);</span>
+<span class="nc" id="L239">                return Estado.valueOf(scanner.nextLine().toUpperCase());</span>
+<span class="nc" id="L240">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L241">                System.out.println(&quot;Estado inválido. Las opciones son: PENDIENTE, EN_PROGRESO, COMPLETADA.&quot;);</span>
+<span class="nc" id="L242">            }</span>
+        }
+    }
+
+    private int leerEnteroEnRango(String mensaje, int min, int max) {
+        int opcion;
+        while (true) {
+            try {
+<span class="nc" id="L250">                System.out.print(mensaje);</span>
+<span class="nc" id="L251">                opcion = Integer.parseInt(scanner.nextLine());</span>
+<span class="nc bnc" id="L252" title="All 4 branches missed.">                if (opcion &gt;= min &amp;&amp; opcion &lt;= max) {</span>
+<span class="nc" id="L253">                    break;</span>
+                }
+<span class="nc" id="L255">                System.out.printf(&quot;Ingrese un número entre %d y %d.\n&quot;, min, max);</span>
+<span class="nc" id="L256">            } catch (NumberFormatException e) {</span>
+<span class="nc" id="L257">                System.out.println(&quot;Entrada inválida. Ingrese un número.&quot;);</span>
+<span class="nc" id="L258">            }</span>
+        }
+<span class="nc" id="L260">        return opcion;</span>
+    }
+
+    private Long leerIdTarea(String mensaje) {
+        while (true) {
+            try {
+<span class="nc" id="L266">                System.out.print(mensaje);</span>
+<span class="nc" id="L267">                return Long.parseLong(scanner.nextLine());</span>
+<span class="nc" id="L268">            } catch (NumberFormatException e) {</span>
+<span class="nc" id="L269">                System.out.println(&quot;ID inválido. Ingrese un número.&quot;);</span>
+<span class="nc" id="L270">            }</span>
+        }
+    }
+
+    private boolean confirmarAccion(String mensaje) {
+<span class="nc" id="L275">        System.out.print(mensaje);</span>
+<span class="nc" id="L276">        String respuesta = scanner.nextLine().trim();</span>
+<span class="nc" id="L277">        return respuesta.equalsIgnoreCase(&quot;S&quot;);</span>
+    }
+
+    private void imprimirTareasEnTabla(List&lt;Tarea&gt; tareas) {
+<span class="nc bnc" id="L281" title="All 4 branches missed.">        if (tareas == null || tareas.isEmpty()) {</span>
+<span class="nc" id="L282">            System.out.println(&quot;No hay tareas para mostrar&quot;);</span>
+<span class="nc" id="L283">            return;</span>
+        }
+
+<span class="nc" id="L286">        System.out.println(&quot;+----+----------------------+----------------------+----------------+----------+--------------+&quot;);</span>
+<span class="nc" id="L287">        System.out.println(&quot;| ID | Título               | Descripción          | Fecha Venc.    | Prioridad| Estado       |&quot;);</span>
+<span class="nc" id="L288">        System.out.println(&quot;+----+----------------------+----------------------+----------------+----------+--------------+&quot;);</span>
+        
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        for (Tarea t : tareas) {</span>
+<span class="nc" id="L291">            System.out.printf(&quot;| %-2d | %-20s | %-20s | %-14s | %-8s | %-12s |\n&quot;,</span>
+<span class="nc" id="L292">                    t.getId(), </span>
+<span class="nc" id="L293">                    truncarTexto(t.getTitulo(), 20),</span>
+<span class="nc" id="L294">                    truncarTexto(t.getDescripcion(), 20),</span>
+<span class="nc" id="L295">                    t.getFechaVencimiento(),</span>
+<span class="nc" id="L296">                    t.getPrioridad(),</span>
+<span class="nc" id="L297">                    t.getEstado());</span>
+<span class="nc" id="L298">        }</span>
+<span class="nc" id="L299">        System.out.println(&quot;+----+----------------------+----------------------+----------------+----------+--------------+&quot;);</span>
+<span class="nc" id="L300">    }</span>
+
+    private String truncarTexto(String texto, int maxLength) {
+<span class="nc bnc" id="L303" title="All 2 branches missed.">        if (texto == null) return &quot;&quot;;</span>
+<span class="nc bnc" id="L304" title="All 2 branches missed.">        return texto.length() &gt; maxLength ? texto.substring(0, maxLength - 3) + &quot;...&quot; : texto;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

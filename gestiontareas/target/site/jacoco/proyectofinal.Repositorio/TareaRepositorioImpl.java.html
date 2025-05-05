@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TareaRepositorioImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ProyectoFinalCS</a> &gt; <a href="index.source.html" class="el_package">proyectofinal.Repositorio</a> &gt; <span class="el_source">TareaRepositorioImpl.java</span></div><h1>TareaRepositorioImpl.java</h1><pre class="source lang-java linenums">package proyectofinal.Repositorio;
+
+import proyectofinal.Model.Tarea;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+
+/**
+ * Implementación en memoria del repositorio de tareas.
+ */
+<span class="nc" id="L14">public class TareaRepositorioImpl implements TareaRepositorio {</span>
+<span class="nc" id="L15">    private final List&lt;Tarea&gt; tareas = Collections.synchronizedList(new ArrayList&lt;&gt;());</span>
+<span class="nc" id="L16">    private final AtomicLong idGenerator = new AtomicLong(1);</span>
+
+    @Override
+    public Tarea guardar(Tarea tarea) {
+<span class="nc" id="L20">        validarTareaNoNula(tarea);</span>
+        
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        if (tarea.getId() == null) {</span>
+<span class="nc" id="L23">            tarea.setId(idGenerator.getAndIncrement());</span>
+        }
+        
+<span class="nc" id="L26">        tareas.add(clonarTarea(tarea));</span>
+<span class="nc" id="L27">        return tarea;</span>
+    }
+
+    @Override
+    public Optional&lt;Tarea&gt; buscarPorId(Long id) {
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L33">            return Optional.empty();</span>
+        }
+        
+<span class="nc" id="L36">        return tareas.stream()</span>
+<span class="nc" id="L37">                   .filter(t -&gt; id.equals(t.getId()))</span>
+<span class="nc" id="L38">                   .findFirst()</span>
+<span class="nc" id="L39">                   .map(this::clonarTarea);</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; obtenerTodas() {
+<span class="nc" id="L44">        return tareas.stream()</span>
+<span class="nc" id="L45">                   .map(this::clonarTarea)</span>
+<span class="nc" id="L46">                   .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public boolean eliminar(Long id) {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L52">            return false;</span>
+        }
+        
+<span class="nc" id="L55">        return tareas.removeIf(t -&gt; id.equals(t.getId()));</span>
+    }
+
+    @Override
+    public Tarea actualizar(Tarea tarea) {
+<span class="nc" id="L60">        validarTareaNoNula(tarea);</span>
+        
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (tarea.getId() == null) {</span>
+<span class="nc" id="L63">            throw new IllegalArgumentException(&quot;El ID de la tarea no puede ser nulo para actualizar&quot;);</span>
+        }
+        
+<span class="nc" id="L66">        eliminar(tarea.getId());</span>
+<span class="nc" id="L67">        tareas.add(clonarTarea(tarea));</span>
+<span class="nc" id="L68">        return tarea;</span>
+    }
+
+    @Override
+    public boolean existeConId(Long id) {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        return id != null &amp;&amp; tareas.stream()</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                               .anyMatch(t -&gt; id.equals(t.getId()));</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; buscarPorPalabraClave(String palabraClave) {
+<span class="nc bnc" id="L79" title="All 4 branches missed.">        if (palabraClave == null || palabraClave.trim().isEmpty()) {</span>
+<span class="nc" id="L80">            return Collections.emptyList();</span>
+        }
+
+<span class="nc" id="L83">        String palabra = palabraClave.toLowerCase().trim();</span>
+        
+<span class="nc" id="L85">        return tareas.stream()</span>
+<span class="nc" id="L86">                .filter(tarea -&gt; contienePalabraClave(tarea, palabra))</span>
+<span class="nc" id="L87">                .map(this::clonarTarea)</span>
+<span class="nc" id="L88">                .collect(Collectors.toList());</span>
+    }
+
+    private boolean contienePalabraClave(Tarea tarea, String palabra) {
+<span class="nc bnc" id="L92" title="All 4 branches missed.">        return (tarea.getTitulo() != null &amp;&amp; tarea.getTitulo().toLowerCase().contains(palabra)) ||</span>
+<span class="nc bnc" id="L93" title="All 4 branches missed.">               (tarea.getDescripcion() != null &amp;&amp; tarea.getDescripcion().toLowerCase().contains(palabra));</span>
+    }
+
+    private void validarTareaNoNula(Tarea tarea) {
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (tarea == null) {</span>
+<span class="nc" id="L98">            throw new IllegalArgumentException(&quot;La tarea no puede ser nula&quot;);</span>
+        }
+<span class="nc" id="L100">    }</span>
+
+    private Tarea clonarTarea(Tarea original) {
+<span class="nc" id="L103">        return new Tarea(</span>
+<span class="nc" id="L104">            original.getId(),</span>
+<span class="nc" id="L105">            original.getTitulo(),</span>
+<span class="nc" id="L106">            original.getDescripcion(),</span>
+<span class="nc" id="L107">            original.getFechaVencimiento(),</span>
+<span class="nc" id="L108">            original.getPrioridad(),</span>
+<span class="nc" id="L109">            original.getEstado()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

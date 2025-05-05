@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainFrame.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ProyectoFinalCS</a> &gt; <a href="index.source.html" class="el_package">proyectofinal.View</a> &gt; <span class="el_source">MainFrame.java</span></div><h1>MainFrame.java</h1><pre class="source lang-java linenums">package proyectofinal.View;
+
+import proyectofinal.Model.Estado;
+import proyectofinal.Model.Prioridad;
+import proyectofinal.Model.Tarea;
+import proyectofinal.Servicio.TareaService;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+public class MainFrame extends JFrame {
+    private static final String APP_TITLE = &quot;Gestión de Tareas&quot;;
+<span class="nc" id="L23">    static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(&quot;dd/MM/yyyy&quot;);</span>
+    
+    private final TareaService tareaService;
+    private final ScheduledExecutorService searchScheduler;
+    private DefaultTableModel tableModel;
+    private JTable tareasTable;
+    private JTextField searchField;
+
+    public MainFrame(TareaService tareaService) {
+<span class="nc" id="L32">        super(APP_TITLE);</span>
+<span class="nc" id="L33">        this.tareaService = tareaService;</span>
+<span class="nc" id="L34">        this.searchScheduler = Executors.newSingleThreadScheduledExecutor();</span>
+<span class="nc" id="L35">        initializeUI();</span>
+<span class="nc" id="L36">        loadTasks();</span>
+<span class="nc" id="L37">    }</span>
+
+    private void initializeUI() {
+<span class="nc" id="L40">        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);</span>
+<span class="nc" id="L41">        setSize(1000, 600);</span>
+<span class="nc" id="L42">        setLocationRelativeTo(null);</span>
+        
+<span class="nc" id="L44">        setupTable();</span>
+<span class="nc" id="L45">        setupMainPanel();</span>
+<span class="nc" id="L46">    }</span>
+
+    private void setupTable() {
+<span class="nc" id="L49">        String[] columnNames = {&quot;ID&quot;, &quot;Título&quot;, &quot;Descripción&quot;, &quot;Fecha Vencimiento&quot;, &quot;Prioridad&quot;, &quot;Estado&quot;};</span>
+<span class="nc" id="L50">        tableModel = new DefaultTableModel(columnNames, 0) {</span>
+            @Override
+            public Class&lt;?&gt; getColumnClass(int columnIndex) {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                return columnIndex == 0 ? Long.class : String.class;</span>
+            }
+            
+            @Override
+            public boolean isCellEditable(int row, int column) {
+<span class="nc" id="L58">                return false;</span>
+            }
+        };
+        
+<span class="nc" id="L62">        tareasTable = new JTable(tableModel);</span>
+<span class="nc" id="L63">        tareasTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);</span>
+<span class="nc" id="L64">        tareasTable.setAutoCreateRowSorter(true);</span>
+<span class="nc" id="L65">    }</span>
+
+    private void setupMainPanel() {
+<span class="nc" id="L68">        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));</span>
+<span class="nc" id="L69">        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));</span>
+        
+<span class="nc" id="L71">        mainPanel.add(createSearchFilterPanel(), BorderLayout.NORTH);</span>
+<span class="nc" id="L72">        mainPanel.add(new JScrollPane(tareasTable), BorderLayout.CENTER);</span>
+<span class="nc" id="L73">        mainPanel.add(createButtonPanel(), BorderLayout.SOUTH);</span>
+        
+<span class="nc" id="L75">        add(mainPanel);</span>
+<span class="nc" id="L76">    }</span>
+
+    private JPanel createSearchFilterPanel() {
+<span class="nc" id="L79">        JPanel panel = new JPanel(new BorderLayout());</span>
+        
+        // Panel de búsqueda
+<span class="nc" id="L82">        JPanel searchPanel = new JPanel(new BorderLayout(5, 5));</span>
+<span class="nc" id="L83">        searchField = new JTextField();</span>
+<span class="nc" id="L84">        searchField.setToolTipText(&quot;Buscar por título o descripción...&quot;);</span>
+<span class="nc" id="L85">        searchField.getDocument().addDocumentListener(createSearchDocumentListener());</span>
+        
+<span class="nc" id="L87">        searchPanel.add(new JLabel(&quot;Buscar:&quot;), BorderLayout.WEST);</span>
+<span class="nc" id="L88">        searchPanel.add(searchField, BorderLayout.CENTER);</span>
+        
+        // Panel de filtros
+<span class="nc" id="L91">        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));</span>
+        
+<span class="nc" id="L93">        JButton filterPriorityButton = new JButton(&quot;Filtrar por Prioridad&quot;);</span>
+<span class="nc" id="L94">        filterPriorityButton.addActionListener(e -&gt; filterByPriority());</span>
+        
+<span class="nc" id="L96">        JButton filterStatusButton = new JButton(&quot;Filtrar por Estado&quot;);</span>
+<span class="nc" id="L97">        filterStatusButton.addActionListener(e -&gt; filterByStatus());</span>
+        
+<span class="nc" id="L99">        JButton showAllButton = new JButton(&quot;Mostrar Todas&quot;);</span>
+<span class="nc" id="L100">        showAllButton.addActionListener(e -&gt; resetView());</span>
+        
+<span class="nc" id="L102">        filterPanel.add(filterPriorityButton);</span>
+<span class="nc" id="L103">        filterPanel.add(filterStatusButton);</span>
+<span class="nc" id="L104">        filterPanel.add(showAllButton);</span>
+        
+<span class="nc" id="L106">        panel.add(searchPanel, BorderLayout.NORTH);</span>
+<span class="nc" id="L107">        panel.add(filterPanel, BorderLayout.SOUTH);</span>
+        
+<span class="nc" id="L109">        return panel;</span>
+    }
+
+    private JPanel createButtonPanel() {
+<span class="nc" id="L113">        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));</span>
+        
+<span class="nc" id="L115">        JButton addButton = new JButton(&quot;Agregar&quot;);</span>
+<span class="nc" id="L116">        addButton.addActionListener(e -&gt; showAddDialog());</span>
+        
+<span class="nc" id="L118">        JButton editButton = new JButton(&quot;Editar&quot;);</span>
+<span class="nc" id="L119">        editButton.addActionListener(e -&gt; showEditDialog());</span>
+        
+<span class="nc" id="L121">        JButton deleteButton = new JButton(&quot;Eliminar&quot;);</span>
+<span class="nc" id="L122">        deleteButton.addActionListener(e -&gt; deleteTask());</span>
+        
+<span class="nc" id="L124">        panel.add(addButton);</span>
+<span class="nc" id="L125">        panel.add(editButton);</span>
+<span class="nc" id="L126">        panel.add(deleteButton);</span>
+        
+<span class="nc" id="L128">        return panel;</span>
+    }
+
+    private void resetView() {
+<span class="nc" id="L132">        searchField.setText(&quot;&quot;);</span>
+<span class="nc" id="L133">        loadTasks();</span>
+<span class="nc" id="L134">    }</span>
+
+    private void loadTasks() {
+<span class="nc" id="L137">        SwingUtilities.invokeLater(() -&gt; {</span>
+<span class="nc" id="L138">            tableModel.setRowCount(0);</span>
+<span class="nc" id="L139">            List&lt;Tarea&gt; tareas = tareaService.obtenerTodasLasTareas();</span>
+<span class="nc" id="L140">            mostrarTareasEnTabla(tareas);</span>
+<span class="nc" id="L141">        });</span>
+<span class="nc" id="L142">    }</span>
+
+    private void mostrarTareasEnTabla(List&lt;Tarea&gt; tareas) {
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        for (Tarea tarea : tareas) {</span>
+<span class="nc" id="L146">            Object[] row = {</span>
+<span class="nc" id="L147">                tarea.getId(),</span>
+<span class="nc" id="L148">                tarea.getTitulo(),</span>
+<span class="nc" id="L149">                tarea.getDescripcion(),</span>
+<span class="nc" id="L150">                tarea.getFechaVencimiento().format(DATE_FORMATTER),</span>
+<span class="nc" id="L151">                tarea.getPrioridad().toString(),</span>
+<span class="nc" id="L152">                tarea.getEstado().toString()</span>
+            };
+<span class="nc" id="L154">            tableModel.addRow(row);</span>
+<span class="nc" id="L155">        }</span>
+<span class="nc" id="L156">    }</span>
+
+    private void showAddDialog() {
+<span class="nc" id="L159">        new TaskDialog(this, &quot;Agregar Tarea&quot;, tarea -&gt; {</span>
+<span class="nc" id="L160">            tareaService.crearTarea(tarea);</span>
+<span class="nc" id="L161">            loadTasks();</span>
+<span class="nc" id="L162">        }).setVisible(true);</span>
+<span class="nc" id="L163">    }</span>
+
+    private void showEditDialog() {
+<span class="nc" id="L166">        int selectedRow = tareasTable.getSelectedRow();</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        if (selectedRow == -1) {</span>
+<span class="nc" id="L168">            showWarning(&quot;Seleccione una tarea para editar&quot;);</span>
+<span class="nc" id="L169">            return;</span>
+        }
+        
+<span class="nc" id="L172">        Long taskId = (Long) tableModel.getValueAt(selectedRow, 0);</span>
+<span class="nc" id="L173">        var tareaOpt = tareaService.obtenerTareaPorId(taskId);</span>
+        
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (tareaOpt.isEmpty()) {</span>
+<span class="nc" id="L176">            showError(&quot;Tarea no encontrada&quot;);</span>
+<span class="nc" id="L177">            return;</span>
+        }
+        
+<span class="nc" id="L180">        Tarea tareaOriginal = tareaOpt.get();</span>
+<span class="nc" id="L181">        new TaskDialog(this, &quot;Editar Tarea&quot;, tareaOriginal, tareaEditada -&gt; {</span>
+            try {
+                // Mantener el ID original de la tarea
+<span class="nc" id="L184">                tareaEditada.setId(tareaOriginal.getId());</span>
+                
+<span class="nc bnc" id="L186" title="All 2 branches missed.">                if (tareaService.actualizarTarea(tareaEditada)) {</span>
+<span class="nc" id="L187">                    loadTasks();</span>
+<span class="nc" id="L188">                    showInfo(&quot;Tarea actualizada exitosamente&quot;);</span>
+                } else {
+<span class="nc" id="L190">                    showError(&quot;No se pudo actualizar la tarea&quot;);</span>
+                }
+<span class="nc" id="L192">            } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L193">                showError(ex.getMessage());</span>
+<span class="nc" id="L194">            }</span>
+<span class="nc" id="L195">        }).setVisible(true);</span>
+<span class="nc" id="L196">    }</span>
+
+    private void deleteTask() {
+<span class="nc" id="L199">        int selectedRow = tareasTable.getSelectedRow();</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (selectedRow == -1) {</span>
+<span class="nc" id="L201">            showWarning(&quot;Seleccione una tarea para eliminar&quot;);</span>
+<span class="nc" id="L202">            return;</span>
+        }
+        
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (confirmAction(&quot;¿Está seguro de eliminar esta tarea?&quot;)) {</span>
+<span class="nc" id="L206">            Long taskId = (Long) tableModel.getValueAt(selectedRow, 0);</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (tareaService.eliminarTarea(taskId)) {</span>
+<span class="nc" id="L208">                loadTasks();</span>
+<span class="nc" id="L209">                showInfo(&quot;Tarea eliminada exitosamente&quot;);</span>
+            } else {
+<span class="nc" id="L211">                showError(&quot;No se pudo eliminar la tarea&quot;);</span>
+            }
+        }
+<span class="nc" id="L214">    }</span>
+
+    private void filterByPriority() {
+<span class="nc" id="L217">        Prioridad selected = (Prioridad) JOptionPane.showInputDialog(</span>
+            this,
+            &quot;Seleccione prioridad:&quot;,
+            &quot;Filtrar por Prioridad&quot;,
+            JOptionPane.PLAIN_MESSAGE,
+            null,
+<span class="nc" id="L223">            Prioridad.values(),</span>
+            Prioridad.MEDIA
+        );
+        
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (selected != null) {</span>
+<span class="nc" id="L228">            filterTasks(() -&gt; tareaService.filtrarPorPrioridad(selected));</span>
+        }
+<span class="nc" id="L230">    }</span>
+
+    private void filterByStatus() {
+<span class="nc" id="L233">        Estado selected = (Estado) JOptionPane.showInputDialog(</span>
+            this,
+            &quot;Seleccione estado:&quot;,
+            &quot;Filtrar por Estado&quot;,
+            JOptionPane.PLAIN_MESSAGE,
+            null,
+<span class="nc" id="L239">            Estado.values(),</span>
+            Estado.PENDIENTE
+        );
+        
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        if (selected != null) {</span>
+<span class="nc" id="L244">            filterTasks(() -&gt; tareaService.filtrarPorEstado(selected));</span>
+        }
+<span class="nc" id="L246">    }</span>
+
+    private void filterTasks(Supplier&lt;List&lt;Tarea&gt;&gt; filterSupplier) {
+<span class="nc" id="L249">        SwingUtilities.invokeLater(() -&gt; {</span>
+<span class="nc" id="L250">            tableModel.setRowCount(0);</span>
+<span class="nc" id="L251">            mostrarTareasEnTabla(filterSupplier.get());</span>
+<span class="nc" id="L252">        });</span>
+<span class="nc" id="L253">    }</span>
+
+    private DocumentListener createSearchDocumentListener() {
+<span class="nc" id="L256">        return new DocumentListener() {</span>
+            private ScheduledFuture&lt;?&gt; lastTask;
+            
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+<span class="nc" id="L261">                scheduleSearch();</span>
+<span class="nc" id="L262">            }</span>
+    
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+<span class="nc" id="L266">                scheduleSearch();</span>
+<span class="nc" id="L267">            }</span>
+    
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+<span class="nc" id="L271">                scheduleSearch();</span>
+<span class="nc" id="L272">            }</span>
+            
+            private void scheduleSearch() {
+<span class="nc bnc" id="L275" title="All 4 branches missed.">                if (lastTask != null &amp;&amp; !lastTask.isDone()) {</span>
+<span class="nc" id="L276">                    lastTask.cancel(false);</span>
+                }
+                
+<span class="nc" id="L279">                lastTask = searchScheduler.schedule(() -&gt; {</span>
+<span class="nc" id="L280">                    String searchText = searchField.getText().trim();</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">                    List&lt;Tarea&gt; resultados = searchText.isEmpty() ? </span>
+<span class="nc" id="L282">                        tareaService.obtenerTodasLasTareas() : </span>
+<span class="nc" id="L283">                        tareaService.buscarPorPalabraClave(searchText);</span>
+                        
+<span class="nc" id="L285">                    SwingUtilities.invokeLater(() -&gt; {</span>
+<span class="nc" id="L286">                        tableModel.setRowCount(0);</span>
+<span class="nc" id="L287">                        mostrarTareasEnTabla(resultados);</span>
+<span class="nc" id="L288">                    });</span>
+<span class="nc" id="L289">                }, 300, TimeUnit.MILLISECONDS);</span>
+<span class="nc" id="L290">            }</span>
+        };
+    }
+
+    // Helpers para mensajes
+    private void showInfo(String message) {
+<span class="nc" id="L296">        JOptionPane.showMessageDialog(this, message, &quot;Éxito&quot;, JOptionPane.INFORMATION_MESSAGE);</span>
+<span class="nc" id="L297">    }</span>
+    
+    private void showWarning(String message) {
+<span class="nc" id="L300">        JOptionPane.showMessageDialog(this, message, &quot;Advertencia&quot;, JOptionPane.WARNING_MESSAGE);</span>
+<span class="nc" id="L301">    }</span>
+    
+    private void showError(String message) {
+<span class="nc" id="L304">        JOptionPane.showMessageDialog(this, message, &quot;Error&quot;, JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc" id="L305">    }</span>
+    
+    private boolean confirmAction(String message) {
+<span class="nc bnc" id="L308" title="All 2 branches missed.">        return JOptionPane.showConfirmDialog(</span>
+            this, 
+            message, 
+            &quot;Confirmar&quot;, 
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        ) == JOptionPane.YES_OPTION;
+    }
+
+    @Override
+    public void dispose() {
+        try {
+<span class="nc" id="L320">            searchScheduler.shutdown();</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">            if (!searchScheduler.awaitTermination(1, TimeUnit.SECONDS)) {</span>
+<span class="nc" id="L322">                searchScheduler.shutdownNow();</span>
+            }
+<span class="nc" id="L324">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L325">            searchScheduler.shutdownNow();</span>
+<span class="nc" id="L326">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L327">        }</span>
+<span class="nc" id="L328">        super.dispose();</span>
+<span class="nc" id="L329">    }</span>
+}
+
+// Clase para el diálogo de tareas (nueva clase separada)
+class TaskDialog extends JDialog {
+<span class="nc" id="L334">    private final JTextField titleField = new JTextField();</span>
+<span class="nc" id="L335">    private final JTextArea descArea = new JTextArea(3, 20);</span>
+<span class="nc" id="L336">    private final JTextField dateField = new JTextField(LocalDate.now().format(MainFrame.DATE_FORMATTER));</span>
+<span class="nc" id="L337">    private final JComboBox&lt;Prioridad&gt; priorityCombo = new JComboBox&lt;&gt;(Prioridad.values());</span>
+<span class="nc" id="L338">    private final JComboBox&lt;Estado&gt; statusCombo = new JComboBox&lt;&gt;(Estado.values());</span>
+
+    public TaskDialog(JFrame parent, String title, Consumer&lt;Tarea&gt; onSave) {
+<span class="nc" id="L341">        this(parent, title, null, onSave);</span>
+<span class="nc" id="L342">    }</span>
+
+    public TaskDialog(JFrame parent, String title, Tarea tarea, Consumer&lt;Tarea&gt; onSave) {
+<span class="nc" id="L345">        super(parent, title, true);</span>
+<span class="nc" id="L346">        setSize(500, 400);</span>
+<span class="nc" id="L347">        setLocationRelativeTo(parent);</span>
+        
+<span class="nc bnc" id="L349" title="All 2 branches missed.">        if (tarea != null) {</span>
+<span class="nc" id="L350">            titleField.setText(tarea.getTitulo());</span>
+<span class="nc" id="L351">            descArea.setText(tarea.getDescripcion());</span>
+<span class="nc" id="L352">            dateField.setText(tarea.getFechaVencimiento().format(MainFrame.DATE_FORMATTER));</span>
+<span class="nc" id="L353">            priorityCombo.setSelectedItem(tarea.getPrioridad());</span>
+<span class="nc" id="L354">            statusCombo.setSelectedItem(tarea.getEstado());</span>
+        }
+        
+<span class="nc" id="L357">        setupUI(onSave);</span>
+<span class="nc" id="L358">    }</span>
+
+    private void setupUI(Consumer&lt;Tarea&gt; onSave) {
+<span class="nc" id="L361">        JPanel panel = new JPanel(new GridLayout(7, 2, 10, 10));</span>
+<span class="nc" id="L362">        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));</span>
+
+<span class="nc" id="L364">        panel.add(new JLabel(&quot;Título*:&quot;));</span>
+<span class="nc" id="L365">        panel.add(titleField);</span>
+<span class="nc" id="L366">        panel.add(new JLabel(&quot;Descripción:&quot;));</span>
+<span class="nc" id="L367">        panel.add(new JScrollPane(descArea));</span>
+<span class="nc" id="L368">        panel.add(new JLabel(&quot;Fecha (dd/MM/yyyy)*:&quot;));</span>
+<span class="nc" id="L369">        panel.add(dateField);</span>
+<span class="nc" id="L370">        panel.add(new JLabel(&quot;Prioridad*:&quot;));</span>
+<span class="nc" id="L371">        panel.add(priorityCombo);</span>
+<span class="nc" id="L372">        panel.add(new JLabel(&quot;Estado*:&quot;));</span>
+<span class="nc" id="L373">        panel.add(statusCombo);</span>
+<span class="nc" id="L374">        panel.add(new JLabel(&quot;* Campos obligatorios&quot;));</span>
+        
+<span class="nc" id="L376">        JButton saveButton = new JButton(&quot;Guardar&quot;);</span>
+<span class="nc" id="L377">        saveButton.addActionListener(e -&gt; saveTask(onSave));</span>
+<span class="nc" id="L378">        panel.add(saveButton);</span>
+        
+<span class="nc" id="L380">        add(panel);</span>
+<span class="nc" id="L381">    }</span>
+
+    private void saveTask(Consumer&lt;Tarea&gt; onSave) {
+        try {
+<span class="nc" id="L385">            validateFields();</span>
+<span class="nc" id="L386">            LocalDate fecha = parseDate();</span>
+            
+<span class="nc" id="L388">            Tarea tarea = new Tarea(</span>
+                null, // ID se asignará al guardar
+<span class="nc" id="L390">                titleField.getText().trim(),</span>
+<span class="nc" id="L391">                descArea.getText().trim(),</span>
+                fecha,
+<span class="nc" id="L393">                (Prioridad) priorityCombo.getSelectedItem(),</span>
+<span class="nc" id="L394">                (Estado) statusCombo.getSelectedItem()</span>
+            );
+            
+<span class="nc" id="L397">            onSave.accept(tarea);</span>
+<span class="nc" id="L398">            dispose();</span>
+<span class="nc" id="L399">        } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L400">            JOptionPane.showMessageDialog(this, ex.getMessage(), &quot;Error&quot;, JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc" id="L401">        }</span>
+<span class="nc" id="L402">    }</span>
+
+    private void validateFields() {
+<span class="nc bnc" id="L405" title="All 2 branches missed.">        if (titleField.getText().trim().isEmpty()) {</span>
+<span class="nc" id="L406">            throw new IllegalArgumentException(&quot;El título no puede estar vacío&quot;);</span>
+        }
+<span class="nc bnc" id="L408" title="All 2 branches missed.">        if (dateField.getText().trim().isEmpty()) {</span>
+<span class="nc" id="L409">            throw new IllegalArgumentException(&quot;La fecha no puede estar vacía&quot;);</span>
+        }
+<span class="nc" id="L411">    }</span>
+
+    private LocalDate parseDate() {
+        try {
+<span class="nc" id="L415">            LocalDate fecha = LocalDate.parse(dateField.getText(), MainFrame.DATE_FORMATTER);</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">            if (fecha.isBefore(LocalDate.now())) {</span>
+<span class="nc" id="L417">                throw new IllegalArgumentException(&quot;La fecha no puede ser anterior al día actual&quot;);</span>
+            }
+<span class="nc" id="L419">            return fecha;</span>
+<span class="nc" id="L420">        } catch (DateTimeParseException e) {</span>
+<span class="nc" id="L421">            throw new IllegalArgumentException(&quot;Formato de fecha inválido. Use dd/MM/yyyy&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

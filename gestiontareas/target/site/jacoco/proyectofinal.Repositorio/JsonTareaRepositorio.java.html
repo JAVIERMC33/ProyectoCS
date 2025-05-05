@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JsonTareaRepositorio.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ProyectoFinalCS</a> &gt; <a href="index.source.html" class="el_package">proyectofinal.Repositorio</a> &gt; <span class="el_source">JsonTareaRepositorio.java</span></div><h1>JsonTareaRepositorio.java</h1><pre class="source lang-java linenums">package proyectofinal.Repositorio;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import proyectofinal.Model.Tarea;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+
+/**
+ * Implementación de TareaRepositorio que persiste datos en formato JSON.
+ */
+public class JsonTareaRepositorio implements TareaRepositorio {
+    private final Path dataFilePath;
+    private final ObjectMapper objectMapper;
+    private final List&lt;Tarea&gt; tareas;
+    private final AtomicLong idGenerator;
+    
+    public JsonTareaRepositorio() {
+<span class="nc" id="L30">        this(Paths.get(&quot;data&quot;, &quot;tareas.json&quot;));</span>
+<span class="nc" id="L31">    }</span>
+    
+    // Constructor para testing
+<span class="fc" id="L34">    protected JsonTareaRepositorio(Path customPath) {</span>
+<span class="fc" id="L35">        this.dataFilePath = customPath;</span>
+<span class="fc" id="L36">        this.objectMapper = configurarObjectMapper();</span>
+<span class="fc" id="L37">        this.tareas = Collections.synchronizedList(cargarTareas());</span>
+<span class="fc" id="L38">        this.idGenerator = new AtomicLong(calcularSiguienteId());</span>
+<span class="fc" id="L39">    }</span>
+    
+    @Override
+    public Tarea guardar(Tarea tarea) {
+<span class="fc" id="L43">        validarTareaNoNula(tarea);</span>
+        
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if (tarea.getId() == null) {</span>
+<span class="fc" id="L46">            tarea.setId(idGenerator.getAndIncrement());</span>
+        }
+        
+<span class="fc" id="L49">        tareas.add(tarea);</span>
+<span class="fc" id="L50">        persistirTareas();</span>
+<span class="fc" id="L51">        return tarea;</span>
+    }
+
+    @Override
+    public Optional&lt;Tarea&gt; buscarPorId(Long id) {
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L57">            return Optional.empty();</span>
+        }
+        
+<span class="fc" id="L60">        return tareas.stream()</span>
+<span class="fc" id="L61">                   .filter(t -&gt; id.equals(t.getId()))</span>
+<span class="fc" id="L62">                   .findFirst();</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; obtenerTodas() {
+<span class="fc" id="L67">        return new ArrayList&lt;&gt;(tareas);</span>
+    }
+
+    @Override
+    public boolean eliminar(Long id) {
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L73">            return false;</span>
+        }
+        
+<span class="fc" id="L76">        boolean eliminado = tareas.removeIf(t -&gt; id.equals(t.getId()));</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (eliminado) {</span>
+<span class="fc" id="L78">            persistirTareas();</span>
+        }
+<span class="fc" id="L80">        return eliminado;</span>
+    }
+
+    @Override
+    public Tarea actualizar(Tarea tarea) {
+<span class="fc" id="L85">        validarTareaNoNula(tarea);</span>
+        
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if (tarea.getId() == null) {</span>
+<span class="nc" id="L88">            throw new IllegalArgumentException(&quot;El ID de la tarea no puede ser nulo para actualizar&quot;);</span>
+        }
+        
+        // Buscar y actualizar la tarea existente en lugar de eliminar y agregar
+<span class="fc" id="L92">        Optional&lt;Tarea&gt; tareaExistente = tareas.stream()</span>
+<span class="fc" id="L93">            .filter(t -&gt; t.getId().equals(tarea.getId()))</span>
+<span class="fc" id="L94">            .findFirst();</span>
+        
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (tareaExistente.isPresent()) {</span>
+<span class="fc" id="L97">            Tarea t = tareaExistente.get();</span>
+<span class="fc" id="L98">            t.setTitulo(tarea.getTitulo());</span>
+<span class="fc" id="L99">            t.setDescripcion(tarea.getDescripcion());</span>
+<span class="fc" id="L100">            t.setFechaVencimiento(tarea.getFechaVencimiento());</span>
+<span class="fc" id="L101">            t.setPrioridad(tarea.getPrioridad());</span>
+<span class="fc" id="L102">            t.setEstado(tarea.getEstado());</span>
+            
+<span class="fc" id="L104">            persistirTareas();</span>
+<span class="fc" id="L105">            return t;</span>
+        } else {
+<span class="nc" id="L107">            throw new IllegalArgumentException(&quot;No se encontró la tarea con ID: &quot; + tarea.getId());</span>
+        }
+    }
+
+    @Override
+    public boolean existeConId(Long id) {
+<span class="nc bnc" id="L113" title="All 4 branches missed.">        return id != null &amp;&amp; tareas.stream().anyMatch(t -&gt; id.equals(t.getId()));</span>
+    }
+
+    @Override
+    public List&lt;Tarea&gt; buscarPorPalabraClave(String palabraClave) {
+<span class="pc bpc" id="L118" title="2 of 4 branches missed.">        if (palabraClave == null || palabraClave.trim().isEmpty()) {</span>
+<span class="nc" id="L119">            return Collections.emptyList();</span>
+        }
+
+<span class="fc" id="L122">        String palabra = palabraClave.toLowerCase().trim();</span>
+        
+<span class="fc" id="L124">        return tareas.stream()</span>
+<span class="fc" id="L125">                .filter(tarea -&gt; contienePalabraClave(tarea, palabra))</span>
+<span class="fc" id="L126">                .collect(Collectors.toList());</span>
+    }
+
+    // Métodos auxiliares privados
+    private ObjectMapper configurarObjectMapper() {
+<span class="fc" id="L131">        ObjectMapper mapper = new ObjectMapper();</span>
+<span class="fc" id="L132">        mapper.registerModule(new JavaTimeModule());</span>
+<span class="fc" id="L133">        mapper.enable(SerializationFeature.INDENT_OUTPUT);</span>
+<span class="fc" id="L134">        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);</span>
+<span class="fc" id="L135">        return mapper;</span>
+    }
+
+    private List&lt;Tarea&gt; cargarTareas() {
+        try {
+<span class="fc" id="L140">            crearDirectorioSiNoExiste();</span>
+            
+<span class="pc bpc" id="L142" title="2 of 4 branches missed.">            if (Files.exists(dataFilePath) &amp;&amp; Files.size(dataFilePath) &gt; 0) {</span>
+<span class="nc" id="L143">                return objectMapper.readValue(dataFilePath.toFile(), new TypeReference&lt;List&lt;Tarea&gt;&gt;() {});</span>
+            }
+            
+<span class="nc" id="L146">            Files.createFile(dataFilePath);</span>
+<span class="nc" id="L147">            return new ArrayList&lt;&gt;();</span>
+            
+<span class="fc" id="L149">        } catch (IOException e) {</span>
+<span class="fc" id="L150">            manejarErrorCarga(e);</span>
+<span class="fc" id="L151">            return new ArrayList&lt;&gt;();</span>
+        }
+    }
+
+    private void crearDirectorioSiNoExiste() throws IOException {
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">        if (!Files.exists(dataFilePath.getParent())) {</span>
+<span class="nc" id="L157">            Files.createDirectories(dataFilePath.getParent());</span>
+        }
+<span class="fc" id="L159">    }</span>
+
+    private long calcularSiguienteId() {
+<span class="fc" id="L162">        return tareas.stream()</span>
+<span class="fc" id="L163">                   .mapToLong(Tarea::getId)</span>
+<span class="fc" id="L164">                   .max()</span>
+<span class="fc" id="L165">                   .orElse(0) + 1;</span>
+    }
+
+    private synchronized void persistirTareas() {
+        try {
+<span class="fc" id="L170">            objectMapper.writeValue(dataFilePath.toFile(), tareas);</span>
+<span class="nc" id="L171">        } catch (IOException e) {</span>
+<span class="nc" id="L172">            throw new PersistenciaException(&quot;Error al guardar tareas en archivo&quot;, e);</span>
+<span class="fc" id="L173">        }</span>
+<span class="fc" id="L174">    }</span>
+
+    private boolean contienePalabraClave(Tarea tarea, String palabra) {
+<span class="pc bpc" id="L177" title="1 of 4 branches missed.">        return (tarea.getTitulo() != null &amp;&amp; tarea.getTitulo().toLowerCase().contains(palabra)) ||</span>
+<span class="pc bpc" id="L178" title="1 of 4 branches missed.">               (tarea.getDescripcion() != null &amp;&amp; tarea.getDescripcion().toLowerCase().contains(palabra));</span>
+    }
+
+    private void validarTareaNoNula(Tarea tarea) {
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">        if (tarea == null) {</span>
+<span class="nc" id="L183">            throw new IllegalArgumentException(&quot;La tarea no puede ser nula&quot;);</span>
+        }
+<span class="fc" id="L185">    }</span>
+
+    private void manejarErrorCarga(IOException e) {
+        try {
+<span class="fc" id="L189">            Files.createDirectories(dataFilePath.getParent());</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">            if (!Files.exists(dataFilePath)) {</span>
+<span class="nc" id="L191">                Files.createFile(dataFilePath);</span>
+            }
+<span class="fc" id="L193">            objectMapper.writeValue(dataFilePath.toFile(), Collections.emptyList());</span>
+<span class="nc" id="L194">        } catch (IOException ex) {</span>
+<span class="nc" id="L195">            throw new PersistenciaException(&quot;No se pudo inicializar el repositorio&quot;, ex);</span>
+<span class="fc" id="L196">        }</span>
+<span class="fc" id="L197">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,67 @@
+-J-Duser.language=
+-J-Duser.country=
+@options
+@packages
+-classpath
+'C:/Users/Javier/.m2/repository/org/openjfx/javafx-controls/17.0.2/javafx-controls-17.0.2.jar;C:/Users/Javier/.m2/repository/org/openjfx/javafx-controls/17.0.2/javafx-controls-17.0.2-win.jar;C:/Users/Javier/.m2/repository/org/openjfx/javafx-graphics/17.0.2/javafx-graphics-17.0.2.jar;C:/Users/Javier/.m2/repository/org/openjfx/javafx-graphics/17.0.2/javafx-graphics-17.0.2-win.jar;C:/Users/Javier/.m2/repository/org/openjfx/javafx-base/17.0.2/javafx-base-17.0.2.jar;C:/Users/Javier/.m2/repository/org/openjfx/javafx-base/17.0.2/javafx-base-17.0.2-win.jar;C:/Users/Javier/.m2/repository/org/openjfx/javafx-fxml/17.0.2/javafx-fxml-17.0.2.jar;C:/Users/Javier/.m2/repository/org/openjfx/javafx-fxml/17.0.2/javafx-fxml-17.0.2-win.jar;C:/Users/Javier/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar;C:/Users/Javier/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.15.2/jackson-annotations-2.15.2.jar;C:/Users/Javier/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.15.2/jackson-core-2.15.2.jar;C:/Users/Javier/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.15.2/jackson-datatype-jsr310-2.15.2.jar;C:/Users/Javier/.m2/repository/org/apache/commons/commons-text/1.10.0/commons-text-1.10.0.jar;C:/Users/Javier/.m2/repository/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar'
+-encoding
+'UTF-8'
+-protected
+-source
+'17'
+-sourcepath
+'C:/Users/Javier/Documents/GitHub/ProyectoFinalCS/gestiontareas/src/main/java'
+-author
+-bottom
+'Copyright &#169; 2025. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'C:/Users/Javier/Documents/GitHub/ProyectoFinalCS/gestiontareas/target/reports/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'ProyectoFinalCS 1.0-SNAPSHOT API'
+-use
+-version
+-windowtitle
+'ProyectoFinalCS 1.0-SNAPSHOT API'
+proyectofinal.Controller
+proyectofinal
+proyectofinal.Model
+proyectofinal.Repositorio
+proyectofinal.Servicio
+proyectofinal.View
+C:\Users\Javier\.m2\repository\org\openjfx\javafx-controls\17.0.2\javafx-controls-17.0.2.jar = 1745622719953
+C:\Users\Javier\.m2\repository\org\openjfx\javafx-controls\17.0.2\javafx-controls-17.0.2-win.jar = 1745622720480
+C:\Users\Javier\.m2\repository\org\openjfx\javafx-graphics\17.0.2\javafx-graphics-17.0.2.jar = 1745622720137
+C:\Users\Javier\.m2\repository\org\openjfx\javafx-graphics\17.0.2\javafx-graphics-17.0.2-win.jar = 1745622721053
+C:\Users\Javier\.m2\repository\org\openjfx\javafx-base\17.0.2\javafx-base-17.0.2.jar = 1745622720037
+C:\Users\Javier\.m2\repository\org\openjfx\javafx-base\17.0.2\javafx-base-17.0.2-win.jar = 1745622720293
+C:\Users\Javier\.m2\repository\org\openjfx\javafx-fxml\17.0.2\javafx-fxml-17.0.2.jar = 1745622720045
+C:\Users\Javier\.m2\repository\org\openjfx\javafx-fxml\17.0.2\javafx-fxml-17.0.2-win.jar = 1745622720264
+C:\Users\Javier\.m2\repository\com\fasterxml\jackson\core\jackson-databind\2.15.2\jackson-databind-2.15.2.jar = 1745622161726
+C:\Users\Javier\.m2\repository\com\fasterxml\jackson\core\jackson-annotations\2.15.2\jackson-annotations-2.15.2.jar = 1745622161823
+C:\Users\Javier\.m2\repository\com\fasterxml\jackson\core\jackson-core\2.15.2\jackson-core-2.15.2.jar = 1745622162021
+C:\Users\Javier\.m2\repository\com\fasterxml\jackson\datatype\jackson-datatype-jsr310\2.15.2\jackson-datatype-jsr310-2.15.2.jar = 1745622161893
+C:\Users\Javier\.m2\repository\org\apache\commons\commons-text\1.10.0\commons-text-1.10.0.jar = 1700251203296
+C:\Users\Javier\.m2\repository\org\apache\commons\commons-lang3\3.12.0\commons-lang3-3.12.0.jar = 1696399765628
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\src\main\java = 1745611468657
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\allclasses-index.html = 1745958984684
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\allpackages-index.html = 1745958984687
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\element-list = 1745958984465
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\help-doc.html = 1745958984735
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\index-all.html = 1745958984729
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\index.html = 1745958984655
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\jquery-ui.overrides.css = 1745958984753
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\member-search-index.js = 1745958984700
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\module-search-index.js = 1745958984692
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\overview-summary.html = 1745958984731
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\overview-tree.html = 1745958984648
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\package-search-index.js = 1745958984695
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\script.js = 1745958984739
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\search.js = 1745958984741
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\serialized-form.html = 1745958984548
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\stylesheet.css = 1745958984738
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\tag-search-index.js = 1745958984701
+C:\Users\Javier\Documents\GitHub\ProyectoFinalCS\gestiontareas\target\reports\apidocs\type-search-index.js = 1745958984698

@@ -1,0 +1,17 @@
+proyectofinal\Controller\TareaController.class
+proyectofinal\Repositorio\JsonTareaRepositorio.class
+proyectofinal\View\MainFrame$1.class
+proyectofinal\Model\Estado.class
+proyectofinal\Model\Prioridad.class
+proyectofinal\Repositorio\TareaRepositorio.class
+proyectofinal\Repositorio\TareaRepositorioImpl.class
+proyectofinal\View\Main.class
+proyectofinal\View\MainFrame.class
+proyectofinal\Servicio\TareaService.class
+proyectofinal\Repositorio\PersistenciaException.class
+proyectofinal\MainTercerCommit.class
+proyectofinal\Repositorio\JsonTareaRepositorio$1.class
+proyectofinal\Model\Tarea.class
+proyectofinal\Servicio\TareaServicioImpl.class
+proyectofinal\View\MainFrame$2.class
+proyectofinal\View\TaskDialog.class
